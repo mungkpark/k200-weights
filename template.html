@@ -62,7 +62,7 @@ tbody tr:hover td { background: #faf9f6; }
 td.nm { max-width: 190px; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
 td .code { color: var(--ink3); font-size: 10.5px; margin-left: 5px; font-weight: 400; }
 .pos { color: var(--accent); } .neg { color: var(--slate); } .na { color: var(--na); }
-#duoTbl { border-radius: 16px; overflow: hidden; }
+#duoTbl { border-radius: 16px; }
 #duoTbl table { min-width: 520px; }
 #duoTbl th { cursor: default; }
 .note { color: var(--ink3); font-size: 11px; margin-top: 22px; line-height: 1.7; border-top: 1px solid var(--line); padding-top: 16px; }
@@ -98,7 +98,7 @@ td .code { color: var(--ink3); font-size: 10.5px; margin-left: 5px; font-weight:
 <div class="cards" id="cards"></div>
 <div class="chartBox"><canvas id="ch"></canvas></div>
 <div class="chartCap"><b style="color:var(--accent)">※ 괴리(이익비중 − 시총비중)가 높은 상위 종목만 표시</b> — 개별 저평가 순위는 아래 표 참고</div>
-<div class="secHead" style="margin-top:26px"><div><div class="t" style="color:var(--accent)">개별종목 이익비중 저평가 순위</div><div class="sub">이익비중 ÷ 시총비중 높은 순 · 1배 초과 = 저평가</div></div></div>
+<div class="secHead" style="margin-top:26px"><div><div class="t" style="color:var(--accent)">개별종목 이익비중 저평가 순위 <span id="rankYear" style="font-size:12px;font-weight:700;color:#fff;background:var(--ink);padding:2px 9px;border-radius:6px;vertical-align:middle;margin-left:4px"></span></div><div class="sub">이익비중 ÷ 시총비중 높은 순 · 1배 초과 = 저평가 · <b>위 연도 탭에 따라 갱신</b></div></div></div>
 <div class="tblWrap"><table id="tbl"><thead><tr id="hrow"></tr></thead><tbody id="tbody"></tbody></table></div>
 <div class="note">
 · 영업이익: 2024·2025 실적 / 2026E는 증권사 컨센서스(FnGuide). 시총: 실적 연도는 그 해 연말, 추정 연도는 현재 기준.<br>
@@ -230,6 +230,7 @@ function render() {
   const { rows, cov, sumOp, sumMk } = buildFor(year);
   const yl = YEARS[year].label, ml = YEARS[year].mkLabel;
   document.querySelectorAll('.controls button').forEach(b => b.classList.toggle('on', b.dataset.y === year));
+  document.getElementById('rankYear').textContent = yl;
   document.getElementById('meta').innerHTML =
     '시총 기준 <b>' + ml + '</b> (현재 기준일 ' + DATA.asofMkt + ') · 컨센서스 수집일 <b>' + DATA.asofCons + '</b> · 커버리지 <b>' + cov.length + '/' + rows.length + '</b>종목 (비중은 커버리지 유니버스 기준)';
   document.getElementById('cards').innerHTML =
