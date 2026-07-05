@@ -80,30 +80,36 @@ td .code { color: var(--ink3); font-size: 10.5px; margin-left: 5px; font-weight:
 </head>
 <body>
 <div class="wrap">
-<div class="eyebrow">KOSPI 밸류에이션 · 이익 vs 시총</div>
-<h1>영업이익 비중 <span style="color:var(--ink3);font-weight:400">vs</span> 시가총액 비중</h1>
+<div class="eyebrow">삼성전자 · SK하이닉스가 코스피에서 차지하는 위치</div>
+<h1>반도체는 <span style="color:var(--accent)">버는 만큼</span> 대접받고 있을까?</h1>
 <div class="meta" id="meta"></div>
 
-<div class="secHead"><span class="num">1</span><div><div class="t">반도체 합산 분석</div><div class="sub">삼성전자+SK하이닉스 — 이익비중 합계 vs 시총비중 합계 · 가설: 두 비중은 같아진다</div></div></div>
+<div class="secHead"><span class="num">1</span><div><div class="t">반도체(삼성전자+SK하이닉스), 이익 vs 주가</div><div class="sub">코스피 전체에서 두 회사가 <b>버는 이익의 몫</b>과 <b>주식 시가총액의 몫</b>을 비교합니다</div></div></div>
 <div class="hero" id="hero"></div>
 <div class="chartBox" style="height:340px"><canvas id="ch2"></canvas></div>
+<div class="chartCap"><b style="color:var(--accent)">빨간 선(이익의 몫)이 회색 선(주가의 몫)보다 위에 있으면</b> = 버는 것에 비해 아직 주가로 덜 반영됐다는 뜻입니다. 연도별 수치는 아래 표에서 좌우로 넘겨 보세요.</div>
 <div class="tblWrap" id="duoTbl" style="margin-bottom:8px"></div>
 
-<div class="secHead"><span class="num">2</span><div><div class="t">KOSPI 200 전체 — 개별종목 분석</div><div class="sub">연도 선택 → 종목별 이익비중 vs 시총비중</div></div></div>
+<div class="secHead"><span class="num">2</span><div><div class="t">지금 주가는 비싼 편일까, 싼 편일까?</div><div class="sub">시가총액을 영업이익으로 나눈 <b>‘이익 대비 몸값’</b> · 숫자가 <b>낮을수록 이익에 비해 싸다</b>는 뜻</div></div></div>
+<div class="chartBox" style="height:320px"><canvas id="chPop"></canvas></div>
+<div class="chartCap" id="popCap"></div>
+
+<div class="secHead"><span class="num">3</span><div><div class="t">코스피 200 — 어떤 종목이 이익 대비 저평가일까?</div><div class="sub">연도를 고르면 그 해 기준으로 표가 바뀝니다</div></div></div>
 <div class="controls">
-  <button data-y="24">2024 실적</button>
-  <button data-y="25">2025 실적</button>
-  <button data-y="26">2026E</button>
+  <button data-y="24">2024년 (확정)</button>
+  <button data-y="25">2025년 (확정)</button>
+  <button data-y="26">2026년 (예상)</button>
 </div>
+<div class="meta" id="selInfo" style="margin-bottom:14px"></div>
 <div class="cards" id="cards"></div>
 <div class="chartBox"><canvas id="ch"></canvas></div>
-<div class="chartCap"><b style="color:var(--accent)">※ 괴리(이익비중 − 시총비중)가 높은 상위 종목만 표시</b> — 개별 저평가 순위는 아래 표 참고</div>
-<div class="secHead" style="margin-top:26px"><div><div class="t" style="color:var(--accent)">개별종목 이익비중 저평가 순위 <span id="rankYear" style="font-size:12px;font-weight:700;color:#fff;background:var(--ink);padding:2px 9px;border-radius:6px;vertical-align:middle;margin-left:4px"></span></div><div class="sub">이익비중 ÷ 시총비중 높은 순 · 1배 초과 = 저평가 · <b>위 연도 탭에 따라 갱신</b></div></div></div>
+<div class="chartCap"><b style="color:var(--accent)">이익의 몫이 주가의 몫보다 많이 큰 종목 순서</b> — 버는 것에 비해 주가가 낮은 종목이 위로 옵니다.</div>
+<div class="secHead" style="margin-top:26px"><div><div class="t" style="color:var(--accent)">이익 대비 저평가 종목 순위 <span id="rankYear" style="font-size:12px;font-weight:700;color:#fff;background:var(--ink);padding:2px 9px;border-radius:6px;vertical-align:middle;margin-left:4px"></span></div><div class="sub">‘이익의 몫 ÷ 주가의 몫’이 큰 순서 · 1배보다 크면 = 버는 것보다 주가가 낮음 · <b>위 연도 버튼에 따라 바뀜</b></div></div></div>
 <div class="tblWrap"><table id="tbl"><thead><tr id="hrow"></tr></thead><tbody id="tbody"></tbody></table></div>
 <div class="note">
-· 영업이익: 2024·2025 실적 / 2026E는 증권사 컨센서스(FnGuide). 시총: 실적 연도는 그 해 연말, 추정 연도는 현재 기준.<br>
-· P/OP = 시총÷영업이익 (PER의 영업이익 버전, 낮을수록 저평가). 괴리(pp) = 이익비중 − 시총비중.<br>
-· 데이터 출처: FnGuide · 한국경제 코리아마켓 · 한국거래소 공표 자료 · 본 페이지는 개인 분석 목적이며 투자 권유가 아닙니다.
+· ‘이익의 몫’ = 그 회사 영업이익 ÷ 코스피 전체 영업이익 합계 · ‘주가의 몫’ = 그 회사 시가총액 ÷ 전체 시가총액 합계.<br>
+· 2024·2025년은 확정 실적, 2026년은 증권사들의 예상치 평균입니다. 과거 연도는 그 해 연말 주가, 2026년은 현재 주가로 계산했습니다.<br>
+· 데이터 출처: FnGuide · 한국경제 · 한국거래소 · 개인 분석용 페이지이며 투자 권유가 아닙니다.
 </div>
 </div>
 <script>
@@ -137,8 +143,8 @@ function fmt(v, d) { return v == null ? '<span class="na">N/A</span>' : v.toLoca
 function cls(v) { return v == null ? '' : v >= 0 ? 'pos' : 'neg'; }
 
 const COLS = [
-  ['name', '종목'], ['capv', '시총(조)'], ['wMk', '시총비중%'],
-  ['op', '영업이익(조)'], ['wOp', '이익비중%'], ['gap', '괴리(pp)'], ['ratio', '이익비중/시총비중(배)']
+  ['name', '종목'], ['capv', '시총(조원)'], ['wMk', '주가의 몫 %'],
+  ['op', '영업이익(조원)'], ['wOp', '이익의 몫 %'], ['gap', '차이(%p)'], ['ratio', '이익÷주가 배수']
 ];
 
 let chart, chart2;
@@ -174,18 +180,12 @@ function renderDuo() {
     const se = b.rows.find(x => x.code === '005930'), hx = b.rows.find(x => x.code === '000660');
     semiPop.push((se && hx && se.op != null && hx.op != null && se.capv && hx.capv && (se.op + hx.op) > 0) ? (se.capv + hx.capv) / (se.op + hx.op) : null);
   }
-  const popRow = (arr, hotIdx) => arr.map((v, i) =>
-    '<div class="popcell' + (i === hotIdx ? ' hot' : '') + '"><div class="pv">' + (v == null ? '적자' : v.toFixed(1)) + '</div><div class="pl">' + popYears[i] + '</div></div>').join('');
-  const hotIdx = HIST.length + YEAR_ORDER.indexOf('26');
   document.getElementById('hero').innerHTML = g26 == null ? '' :
-    '<div class="big" style="color:' + (g26 >= 0 ? 'var(--accent)' : 'var(--slate)') + '">' + (g26 > 0 ? '+' : '') + g26.toFixed(1) + '<span>pp</span></div>' +
-    '<div class="lead"><b>2026E 반도체 괴리</b> = 이익비중 ' + totOp[i26].toFixed(1) + '% − 시총비중 ' + totMk[i26].toFixed(1) + '% · 양수면 이익 기여 대비 시총이 덜 반영된 상태</div>' +
-    '<div class="poprow"><span class="popbadge mkt">시장 전체 P/OP</span><div class="popcells">' + popRow(mktPop, hotIdx) + '</div></div>' +
-    '<div class="poprow"><span class="popbadge semi">반도체 P/OP</span><div class="popcells">' + popRow(semiPop, hotIdx) + '</div></div>' +
-    '<div class="popnote">P/OP = 시총 ÷ 영업이익 (PER 아님 · 순이익이 아니라 영업이익 기준) · 낮을수록 저렴 · 반도체가 시장보다 낮으면 상대 저평가</div>';
+    '<div class="big" style="color:' + (g26 >= 0 ? 'var(--accent)' : 'var(--slate)') + '">' + (g26 > 0 ? '+' : '') + g26.toFixed(1) + '<span>%p</span></div>' +
+    '<div class="lead"><b>2026년 예상 기준</b>, 반도체 두 회사가 코스피에서 <b>버는 이익의 몫은 ' + totOp[i26].toFixed(0) + '%</b>인데 <b>주식 값(시가총액)의 몫은 ' + totMk[i26].toFixed(0) + '%</b>입니다.<br>즉 <b>버는 것보다 ' + g26.toFixed(0) + '%포인트만큼 주가가 덜 쳐주고 있는 셈</b>이에요. (이 차이가 클수록 이익 대비 주가가 낮다는 뜻)</div>';
   const datasets = [
-    { label: '반도체 합산 이익비중', data: totOp, borderColor: '#c0392b', backgroundColor: '#c0392b', pointRadius: 4, pointHoverRadius: 6, borderWidth: 2.5, tension: 0.15, spanGaps: true },
-    { label: '반도체 합산 시총비중', data: totMk, borderColor: '#7a7a76', backgroundColor: '#7a7a76', borderDash: [7, 4], pointRadius: 4, pointHoverRadius: 6, borderWidth: 2.5, tension: 0.15, spanGaps: true }
+    { label: '버는 이익의 몫 (%)', data: totOp, borderColor: '#c0392b', backgroundColor: '#c0392b', pointRadius: 4, pointHoverRadius: 6, borderWidth: 2.5, tension: 0.15, spanGaps: true },
+    { label: '주가(시총)의 몫 (%)', data: totMk, borderColor: '#7a7a76', backgroundColor: '#7a7a76', borderDash: [7, 4], pointRadius: 4, pointHoverRadius: 6, borderWidth: 2.5, tension: 0.15, spanGaps: true }
   ];
   if (chart2) chart2.destroy();
   chart2 = new Chart(document.getElementById('ch2'), {
@@ -209,21 +209,52 @@ function renderDuo() {
     for (const v of arr) s += '<td' + (bold ? ' style="font-weight:600"' : '') + (colorCls ? ' class="' + colorCls + '"' : '') + '>' + (v == null ? '<span class="na">N/A</span>' : v.toFixed(2)) + '</td>';
     return s + '</tr>';
   };
-  dhtml += fmtRow('삼성전자 이익비중%', seOp, false, 'pos');
-  dhtml += fmtRow('SK하이닉스 이익비중%', hxOp, false, 'pos');
-  dhtml += fmtRow('▶ 합산 이익비중%', totOp, true, 'pos');
-  dhtml += fmtRow('삼성전자 시총비중%', seMk, false, null);
-  dhtml += fmtRow('SK하이닉스 시총비중%', hxMk, false, null);
-  dhtml += fmtRow('▶ 합산 시총비중%', totMk, true, null);
-  let s = '<tr><td class="nm" style="font-weight:600">차이 (이익합−시총합, pp)</td>';
+  dhtml += fmtRow('삼성전자 이익의 몫 %', seOp, false, 'pos');
+  dhtml += fmtRow('SK하이닉스 이익의 몫 %', hxOp, false, 'pos');
+  dhtml += fmtRow('▶ 둘이 버는 이익의 몫 %', totOp, true, 'pos');
+  dhtml += fmtRow('삼성전자 주가의 몫 %', seMk, false, null);
+  dhtml += fmtRow('SK하이닉스 주가의 몫 %', hxMk, false, null);
+  dhtml += fmtRow('▶ 둘의 주가(시총)의 몫 %', totMk, true, null);
+  let s = '<tr><td class="nm" style="font-weight:600">차이 (이익 몫 − 주가 몫)</td>';
   for (let i = 0; i < labels.length; i++) {
     const d = (totOp[i] == null || totMk[i] == null) ? null : totOp[i] - totMk[i];
-    s += '<td style="font-weight:600" class="' + (d == null ? '' : cls(d)) + '">' + (d == null ? '<span class="na">N/A</span>' : (d > 0 ? '+' : '') + d.toFixed(2)) + '</td>';
+    s += '<td style="font-weight:600" class="' + (d == null ? '' : cls(d)) + '">' + (d == null ? '<span class="na">N/A</span>' : (d > 0 ? '+' : '') + d.toFixed(1)) + '</td>';
   }
   dhtml += s + '</tr>';
   dhtml += '</tbody></table>';
-  dhtml += '<div class="chartCap" style="margin:6px 8px 8px"><b>빨간 실선(이익비중)이 회색 점선(시총비중) 위에 있으면 = 이익 기여 대비 시총이 덜 반영된 상태.</b> † 2020~2023은 코스피 전체·공표 통계 기준.</div>';
+  dhtml += '<div class="chartCap" style="margin:6px 8px 8px">숫자는 % · † 2020~2023년은 코스피 전체 기준의 대략치입니다.</div>';
   document.getElementById('duoTbl').innerHTML = dhtml;
+}
+
+function renderPop() {
+  const isMobile = window.innerWidth <= 640;
+  const labels = [...HIST.map(h => h.y.replace('†','')), ...YEAR_ORDER.map(k => YEARS[k].label.replace(' (예상)','E').replace(' (확정)',''))];
+  const mkt = [...HIST.map(h => h.pop)];
+  const semi = [...HIST.map(h => h.spop)];
+  for (const yk of YEAR_ORDER) {
+    const b = buildFor(yk);
+    mkt.push(+(b.sumMk / b.sumOp).toFixed(1));
+    const se = b.rows.find(x => x.code === '005930'), hx = b.rows.find(x => x.code === '000660');
+    semi.push((se && hx && se.op != null && hx.op != null && se.capv && hx.capv && (se.op + hx.op) > 0) ? +((se.capv + hx.capv) / (se.op + hx.op)).toFixed(1) : null);
+  }
+  if (window.__popChart) window.__popChart.destroy();
+  window.__popChart = new Chart(document.getElementById('chPop'), {
+    type: 'line',
+    data: { labels, datasets: [
+      { label: '코스피 전체', data: mkt, borderColor: '#7b828b', backgroundColor: '#7b828b', pointRadius: 4, pointHoverRadius: 6, borderWidth: 2.5, tension: 0.15, spanGaps: true },
+      { label: '반도체 (삼성·하이닉스)', data: semi, borderColor: '#c0392b', backgroundColor: '#c0392b', pointRadius: 4, pointHoverRadius: 6, borderWidth: 2.5, tension: 0.15, spanGaps: true }
+    ] },
+    options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+      plugins: { legend: { labels: { boxWidth: 14, font: { size: isMobile ? 10 : 12 } } },
+        tooltip: { callbacks: { label: c => c.dataset.label + ': ' + (c.parsed.y == null ? '적자' : c.parsed.y + '배') } } },
+      scales: { x: { ticks: { font: { size: isMobile ? 9.5 : 11 } } }, y: { title: { display: !isMobile, text: '이익 대비 몸값 (배)' }, ticks: { font: { size: isMobile ? 9 : 10 }, callback: v => v + '배' } } } }
+  });
+  const m26 = mkt[mkt.length-1], s26 = semi[semi.length-1];
+  const lo = Math.min(...mkt.filter(v=>v!=null)), hi = Math.max(...mkt.filter(v=>v!=null));
+  document.getElementById('popCap').innerHTML =
+    '숫자가 <b>낮을수록 이익에 비해 주가가 싸다</b>는 뜻이에요. 2026년 예상 기준 코스피 전체는 <b>' + m26.toFixed(1) + '배</b>' +
+    (m26 <= lo + 0.5 ? ' — 최근 몇 년 중 가장 낮은(가장 싼) 수준입니다.' : '.') +
+    ' 반도체는 <b>' + s26.toFixed(1) + '배</b>로 시장보다도 낮습니다(더 쌉니다). † 2020~2023년은 코스피 전체 기준의 대략치.';
 }
 
 function render() {
@@ -231,12 +262,12 @@ function render() {
   const yl = YEARS[year].label, ml = YEARS[year].mkLabel;
   document.querySelectorAll('.controls button').forEach(b => b.classList.toggle('on', b.dataset.y === year));
   document.getElementById('rankYear').textContent = yl;
-  document.getElementById('meta').innerHTML =
-    '시총 기준 <b>' + ml + '</b> (현재 기준일 ' + DATA.asofMkt + ') · 컨센서스 수집일 <b>' + DATA.asofCons + '</b> · 커버리지 <b>' + cov.length + '/' + rows.length + '</b>종목 (비중은 커버리지 유니버스 기준)';
+  document.getElementById('selInfo').innerHTML =
+    '지금 보는 기준: <b>' + yl + '</b> · 주가(시총)는 ' + (year === '26' ? '<b>현재</b> 시점' : '<b>' + ml + '</b>') + ' 기준 · 예상치가 있는 <b>' + cov.length + '개</b> 종목으로 계산';
   document.getElementById('cards').innerHTML =
-    '<div class="card"><div class="v">' + (sumMk/10000).toLocaleString('ko-KR',{maximumFractionDigits:0}) + '조</div><div class="k">커버리지 시총 합계 (' + ml + ')</div></div>' +
-    '<div class="card"><div class="v">' + (sumOp/10000).toLocaleString('ko-KR',{maximumFractionDigits:0}) + '조</div><div class="k">' + yl + ' 영업이익 합계</div></div>' +
-    '<div class="card"><div class="v">' + (sumMk/sumOp).toFixed(1) + '배</div><div class="k">시장 P/OP (시총합÷영업이익합)</div></div>';
+    '<div class="card"><div class="v">' + (sumMk/10000).toLocaleString('ko-KR',{maximumFractionDigits:0}) + '조원</div><div class="k">' + cov.length + '개 종목 시가총액 합계</div></div>' +
+    '<div class="card"><div class="v">' + (sumOp/10000).toLocaleString('ko-KR',{maximumFractionDigits:0}) + '조원</div><div class="k">' + yl + ' 영업이익 합계</div></div>' +
+    '<div class="card"><div class="v">' + (sumMk/sumOp).toFixed(1) + '배</div><div class="k">시장 전체 ‘이익 대비 몸값’</div></div>';
 
   for (const r of rows) r.ratio = (r.wOp != null && r.wMk > 0) ? r.wOp / r.wMk : null;
 
@@ -246,9 +277,9 @@ function render() {
   if (chart) chart.destroy();
   chart = new Chart(document.getElementById('ch'), {
     type: 'bar',
-    data: { labels: cd.map(r => r.name), datasets: [{ label: yl + ' 괴리(pp) 상위 — 이익비중이 시총비중보다 높은 종목', data: cd.map(r => +r.gap.toFixed(2)), backgroundColor: '#c0392b' }] },
+    data: { labels: cd.map(r => r.name), datasets: [{ label: yl + ' · 이익의 몫 − 주가의 몫 차이(%p, 클수록 저평가)', data: cd.map(r => +r.gap.toFixed(2)), backgroundColor: '#c0392b' }] },
     options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: true, labels: { boxWidth: 12, font: { size: isMobile ? 10 : 11 } } }, tooltip: { callbacks: { afterLabel: c => { const r = cd[c.dataIndex]; return '이익비중 ' + r.wOp.toFixed(2) + '% / 시총비중 ' + r.wMk.toFixed(2) + '% (' + (r.wOp / r.wMk).toFixed(1) + '배)'; } } } },
+      plugins: { legend: { display: true, labels: { boxWidth: 12, font: { size: isMobile ? 10 : 11 } } }, tooltip: { callbacks: { afterLabel: c => { const r = cd[c.dataIndex]; return '이익의 몫 ' + r.wOp.toFixed(1) + '% / 주가의 몫 ' + r.wMk.toFixed(1) + '% · 이익÷주가 ' + (r.wOp / r.wMk).toFixed(1) + '배'; } } } },
       scales: { x: { ticks: { font: { size: isMobile ? 9 : 10 } } }, y: { ticks: { font: { size: isMobile ? 9.5 : 10.5 } } } } }
   });
 
@@ -276,10 +307,12 @@ function render() {
     '<td class="' + (r.ratio != null && r.ratio >= 1 ? 'pos' : '') + '">' + (r.ratio == null ? '<span class="na">N/A</span>' : r.ratio.toFixed(2) + '배') + '</td></tr>').join('');
 }
 
+document.getElementById('meta').innerHTML = '데이터 기준일 · 주가(시가총액) <b>' + DATA.asofMkt + '</b>, 증권사 예상치 <b>' + DATA.asofCons + '</b> · 단위: 조원, %';
 document.querySelectorAll('.controls button').forEach(b => b.onclick = () => { year = b.dataset.y; localStorage.setItem('k200y2', year); render(); });
-let rsz; window.addEventListener('resize', () => { clearTimeout(rsz); rsz = setTimeout(() => { render(); renderDuo(); }, 300); });
+let rsz; window.addEventListener('resize', () => { clearTimeout(rsz); rsz = setTimeout(() => { render(); renderDuo(); renderPop(); }, 300); });
 render();
 renderDuo();
+renderPop();
 </script>
 </body>
 </html>
