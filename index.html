@@ -92,10 +92,10 @@ td .code { color: var(--ink3); font-size: 10.5px; margin-left: 5px; font-weight:
 <h1>반도체는 <span style="color:var(--accent)">버는 만큼</span> 대접받고 있을까?</h1>
 <div class="meta" id="meta"></div>
 
-<div class="secHead"><span class="num">1</span><div><div class="t">반도체(삼성전자+SK하이닉스), 이익 vs 주가</div><div class="sub">코스피 전체에서 두 회사가 <b>버는 이익의 몫</b>과 <b>주식 시가총액의 몫</b>을 비교합니다</div></div></div>
+<div class="secHead"><span class="num">1</span><div><div class="t">반도체(삼성전자+SK하이닉스), 이익 vs 주가</div><div class="sub">코스피 전체에서 두 회사가 <b>이익 비중</b>과 <b>시총 비중</b>을 비교합니다</div></div></div>
 <div class="hero" id="hero"></div>
 <div class="chartBox" style="height:340px"><canvas id="ch2"></canvas></div>
-<div class="chartCap"><b style="color:var(--accent)">빨간 선(이익의 몫)이 회색 선(주가의 몫)보다 위에 있으면</b> = 버는 것에 비해 아직 주가로 덜 반영됐다는 뜻입니다. 연도별 수치는 아래 표에서 좌우로 넘겨 보세요.</div>
+<div class="chartCap"><b style="color:var(--accent)">빨간 선(이익 비중)이 회색 선(시총 비중)보다 위에 있으면</b> = 버는 것에 비해 아직 주가로 덜 반영됐다는 뜻입니다. 연도별 수치는 아래 표에서 좌우로 넘겨 보세요.</div>
 <div class="tblWrap" id="duoTbl" style="margin-bottom:8px"></div>
 
 <div class="secHead"><span class="num">2</span><div><div class="t">지금 주가는 비싼 편일까, 싼 편일까?</div><div class="sub">시가총액을 영업이익으로 나눈 <b>‘이익 대비 몸값’</b> · 숫자가 <b>낮을수록 이익에 비해 싸다</b>는 뜻</div></div></div>
@@ -115,7 +115,7 @@ td .code { color: var(--ink3); font-size: 10.5px; margin-left: 5px; font-weight:
 <div class="secHead" style="margin-top:26px"><div><div class="t" style="color:var(--accent)">이익 대비 저평가 종목 순위 <span id="rankYear" style="font-size:12px;font-weight:700;color:#fff;background:var(--ink);padding:2px 9px;border-radius:6px;vertical-align:middle;margin-left:4px"></span></div><div class="sub"><b>1배 이상(=버는 것보다 주가가 낮은 저평가 종목)만</b> 이익÷주가 배수 높은 순으로 표시 · 위 연도 버튼에 따라 바뀜</div></div></div>
 <div class="tblWrap"><table id="tbl"><thead><tr id="hrow"></tr></thead><tbody id="tbody"></tbody></table></div>
 <div class="note">
-· ‘이익의 몫’ = 그 회사 영업이익 ÷ 코스피 전체 영업이익 합계 · ‘주가의 몫’ = 그 회사 시가총액 ÷ 전체 시가총액 합계.<br>
+· ‘이익 비중’ = 그 회사 영업이익 ÷ 코스피 전체 영업이익 합계 · ‘시총 비중’ = 그 회사 시가총액 ÷ 전체 시가총액 합계.<br>
 · 2024·2025년은 확정 실적, 2026년은 증권사들의 예상치 평균입니다. 과거 연도는 그 해 연말 주가, 2026년은 현재 주가로 계산했습니다.<br>
 · 데이터 출처: FnGuide · 한국경제 · 한국거래소 · 개인 분석용 페이지이며 투자 권유가 아닙니다.
 </div>
@@ -151,8 +151,8 @@ function fmt(v, d) { return v == null ? '<span class="na">N/A</span>' : v.toLoca
 function cls(v) { return v == null ? '' : v >= 0 ? 'pos' : 'neg'; }
 
 const COLS = [
-  ['name', '종목'], ['capv', '시총(조원)'], ['wMk', '주가의 몫 %'],
-  ['op', '영업이익(조원)'], ['wOp', '이익의 몫 %'], ['gap', '차이(%p)'], ['ratio', '이익÷주가 배수']
+  ['name', '종목'], ['capv', '시총(조원)'], ['wMk', '시총 비중 %'],
+  ['op', '영업이익(조원)'], ['wOp', '이익 비중 %'], ['gap', '차이(%p)'], ['ratio', '이익÷주가 배수']
 ];
 
 let chart, chart2;
@@ -190,10 +190,10 @@ function renderDuo() {
   }
   document.getElementById('hero').innerHTML = g26 == null ? '' :
     '<div class="big" style="color:' + (g26 >= 0 ? 'var(--accent)' : 'var(--slate)') + '">' + (g26 > 0 ? '+' : '') + g26.toFixed(1) + '<span>%p</span></div>' +
-    '<div class="lead"><b>2026년 예상 기준</b>, 반도체 두 회사가 코스피에서 <b>버는 이익의 몫은 ' + totOp[i26].toFixed(0) + '%</b>인데 <b>주식 값(시가총액)의 몫은 ' + totMk[i26].toFixed(0) + '%</b>입니다.<br>즉 <b>버는 것보다 ' + g26.toFixed(0) + '%포인트만큼 주가가 덜 쳐주고 있는 셈</b>이에요. (이 차이가 클수록 이익 대비 주가가 낮다는 뜻)</div>';
+    '<div class="lead"><b>2026년 예상 기준</b>, 반도체 두 회사가 코스피에서 <b>이익 비중은 ' + totOp[i26].toFixed(0) + '%</b>인데 <b>시총 비중은 ' + totMk[i26].toFixed(0) + '%</b>입니다.<br>즉 <b>버는 것보다 ' + g26.toFixed(0) + '%포인트만큼 주가가 덜 쳐주고 있는 셈</b>이에요. (이 차이가 클수록 이익 대비 주가가 낮다는 뜻)</div>';
   const datasets = [
-    { label: '버는 이익의 몫 (%)', data: totOp, borderColor: '#c0392b', backgroundColor: '#c0392b', pointRadius: 4, pointHoverRadius: 6, borderWidth: 2.5, tension: 0.15, spanGaps: true },
-    { label: '주가(시총)의 몫 (%)', data: totMk, borderColor: '#7a7a76', backgroundColor: '#7a7a76', borderDash: [7, 4], pointRadius: 4, pointHoverRadius: 6, borderWidth: 2.5, tension: 0.15, spanGaps: true }
+    { label: '이익 비중 (%)', data: totOp, borderColor: '#c0392b', backgroundColor: '#c0392b', pointRadius: 4, pointHoverRadius: 6, borderWidth: 2.5, tension: 0.15, spanGaps: true },
+    { label: '시총 비중 (%)', data: totMk, borderColor: '#7a7a76', backgroundColor: '#7a7a76', borderDash: [7, 4], pointRadius: 4, pointHoverRadius: 6, borderWidth: 2.5, tension: 0.15, spanGaps: true }
   ];
   if (chart2) chart2.destroy();
   chart2 = new Chart(document.getElementById('ch2'), {
@@ -217,13 +217,13 @@ function renderDuo() {
     for (const v of arr) s += '<td' + (bold ? ' style="font-weight:600"' : '') + (colorCls ? ' class="' + colorCls + '"' : '') + '>' + (v == null ? '<span class="na">N/A</span>' : v.toFixed(2)) + '</td>';
     return s + '</tr>';
   };
-  dhtml += fmtRow('삼성전자 이익의 몫 %', seOp, false, 'pos');
-  dhtml += fmtRow('SK하이닉스 이익의 몫 %', hxOp, false, 'pos');
-  dhtml += fmtRow('▶ 둘이 버는 이익의 몫 %', totOp, true, 'pos');
-  dhtml += fmtRow('삼성전자 주가의 몫 %', seMk, false, null);
-  dhtml += fmtRow('SK하이닉스 주가의 몫 %', hxMk, false, null);
-  dhtml += fmtRow('▶ 둘의 주가(시총)의 몫 %', totMk, true, null);
-  let s = '<tr><td class="nm" style="font-weight:600">차이 (이익 몫 − 주가 몫)</td>';
+  dhtml += fmtRow('삼성전자 이익 비중 %', seOp, false, 'pos');
+  dhtml += fmtRow('SK하이닉스 이익 비중 %', hxOp, false, 'pos');
+  dhtml += fmtRow('▶ 둘이 이익 비중 %', totOp, true, 'pos');
+  dhtml += fmtRow('삼성전자 시총 비중 %', seMk, false, null);
+  dhtml += fmtRow('SK하이닉스 시총 비중 %', hxMk, false, null);
+  dhtml += fmtRow('▶ 둘의 시총 비중 %', totMk, true, null);
+  let s = '<tr><td class="nm" style="font-weight:600">차이 (이익 비중 − 시총 비중)</td>';
   for (let i = 0; i < labels.length; i++) {
     const d = (totOp[i] == null || totMk[i] == null) ? null : totOp[i] - totMk[i];
     s += '<td style="font-weight:600" class="' + (d == null ? '' : cls(d)) + '">' + (d == null ? '<span class="na">N/A</span>' : (d > 0 ? '+' : '') + d.toFixed(1)) + '</td>';
@@ -287,7 +287,7 @@ function render() {
     type: 'bar',
     data: { labels: cd.map(r => r.name), datasets: [{ label: yl + ' · 이익÷주가 배수 (1배 이상 = 저평가, 클수록 더 저평가)', data: cd.map(r => +r.ratio.toFixed(2)), backgroundColor: '#c0392b' }] },
     options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: true, labels: { boxWidth: 12, font: { size: isMobile ? 10 : 11 } } }, tooltip: { callbacks: { label: c => '이익÷주가 ' + c.parsed.x.toFixed(1) + '배', afterLabel: c => { const r = cd[c.dataIndex]; return '이익의 몫 ' + r.wOp.toFixed(1) + '% / 주가의 몫 ' + r.wMk.toFixed(1) + '%'; } } } },
+      plugins: { legend: { display: true, labels: { boxWidth: 12, font: { size: isMobile ? 10 : 11 } } }, tooltip: { callbacks: { label: c => '이익÷주가 ' + c.parsed.x.toFixed(1) + '배', afterLabel: c => { const r = cd[c.dataIndex]; return '이익 비중 ' + r.wOp.toFixed(1) + '% / 시총 비중 ' + r.wMk.toFixed(1) + '%'; } } } },
       scales: { x: { ticks: { font: { size: isMobile ? 9 : 10 }, callback: v => v + '배' } }, y: { ticks: { font: { size: isMobile ? 9.5 : 10.5 } } } } }
   });
 
