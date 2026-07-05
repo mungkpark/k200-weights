@@ -118,10 +118,10 @@ const COLS = [
 let chart, chart2;
 
 const HIST = [
-  {y:'2020†', seOp:33.42, seMk:24.42, hxOp:4.65, hxMk:4.36, pop:18.4},
-  {y:'2021†', seOp:27.63, seMk:21.21, hxOp:6.64, hxMk:4.33, pop:11.8},
-  {y:'2022†', seOp:27.21, seMk:18.68, hxOp:4.40, hxMk:3.09, pop:11.1},
-  {y:'2023†', seOp:5.30,  seMk:22.04, hxOp:-6.24, hxMk:4.84, pop:17.2}
+  {y:'2020†', seOp:33.42, seMk:24.42, hxOp:4.65, hxMk:4.36, pop:18.4, spop:13.9},
+  {y:'2021†', seOp:27.63, seMk:21.21, hxOp:6.64, hxMk:4.33, pop:11.8, spop:8.8},
+  {y:'2022†', seOp:27.21, seMk:18.68, hxOp:4.40, hxMk:3.09, pop:11.1, spop:7.6},
+  {y:'2023†', seOp:5.30,  seMk:22.04, hxOp:-6.24, hxMk:4.84, pop:17.2, spop:null}
 ];
 
 function renderDuo() {
@@ -143,9 +143,21 @@ function renderDuo() {
     '<div class="big" style="color:' + (g26 >= 0 ? '#c0392b' : '#666') + '">' + (g26 > 0 ? '+' : '') + g26.toFixed(1) + '<span style="font-size:24px">pp</span></div>' +
     '<div class="sub"><b>2026E 반도체 괴리</b> = 이익비중 ' + totOp[i26].toFixed(1) + '% − 시총비중 ' + totMk[i26].toFixed(1) + '% · 양수면 이익 기여 대비 시총 미반영</div>' +
     (function(){
-      const parts = HIST.map(h => h.y.replace('†','') + ' ' + h.pop.toFixed(1) + '배');
-      for (const yk of YEAR_ORDER) { const b = buildFor(yk); parts.push((yk === '26' ? '<b style="color:#c0392b">' : '') + YEARS[yk].label.replace(' 실적','') + ' ' + (b.sumMk / b.sumOp).toFixed(1) + '배' + (yk === '26' ? '</b>' : '')); }
-      return '<div class="sub" style="margin-top:7px;border-top:1px solid #eee;padding-top:7px"><b>시장 P/OP(시총÷영업이익) 추이</b> · ' + parts.join(' → ') + ' <span style="color:#999">(낮을수록 저렴 · PER 아님, 영업이익 기준)</span></div>';
+      const mkt = HIST.map(h => h.y.replace('†','') + ' ' + h.pop.toFixed(1));
+      const semi = HIST.map(h => h.y.replace('†','') + ' ' + (h.spop == null ? '적자' : h.spop.toFixed(1)));
+      for (const yk of YEAR_ORDER) {
+        const b = buildFor(yk);
+        const lbl = YEARS[yk].label.replace(' 실적','');
+        const em = yk === '26';
+        mkt.push((em ? '<b style="color:#c0392b">' : '') + lbl + ' ' + (b.sumMk / b.sumOp).toFixed(1) + (em ? '</b>' : ''));
+        const se = b.rows.find(x => x.code === '005930'), hx = b.rows.find(x => x.code === '000660');
+        let sp = null;
+        if (se && hx && se.op != null && hx.op != null && se.capv && hx.capv && (se.op + hx.op) > 0) sp = (se.capv + hx.capv) / (se.op + hx.op);
+        semi.push((em ? '<b style="color:#c0392b">' : '') + lbl + ' ' + (sp == null ? '적자' : sp.toFixed(1)) + (em ? '</b>' : ''));
+      }
+      return '<div class="sub" style="margin-top:7px;border-top:1px solid #eee;padding-top:7px;text-align:left"><span style="background:#1a1a1a;color:#fff;padding:1px 7px;border-radius:4px;font-weight:700">시장 전체 P/OP</span> ' + mkt.join(' → ') + '배</div>' +
+             '<div class="sub" style="margin-top:4px;text-align:left"><span style="background:#c0392b;color:#fff;padding:1px 7px;border-radius:4px;font-weight:700">반도체(삼전+하닉) P/OP</span> ' + semi.join(' → ') + '배</div>' +
+             '<div class="sub" style="margin-top:3px;text-align:left;color:#999">P/OP = 시총÷영업이익 (PER 아님) · 낮을수록 저렴 · 반도체가 시장보다 낮으면 상대 저평가</div>';
     })();
   const datasets = [
     { label: '반도체 합산 이익비중', data: totOp, borderColor: '#c0392b', backgroundColor: '#c0392b', pointRadius: 4, pointHoverRadius: 6, borderWidth: 2.5, tension: 0.15, spanGaps: true },
