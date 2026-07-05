@@ -298,7 +298,7 @@ function render() {
     if (sortKey === k) sortDir *= -1; else { sortKey = k; sortDir = k === 'name' ? 1 : -1; }
     render();
   });
-  let list = rows.filter(r => !query || r.name.includes(query) || r.code.includes(query));
+  let list = rows.filter(r => r.op != null && r.capv != null && r.ratio != null);
   list.sort((a, b) => {
     const va = a[sortKey], vb = b[sortKey];
     if (sortKey === 'name') return sortDir * a.name.localeCompare(b.name, 'ko');
