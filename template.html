@@ -66,7 +66,7 @@ td .code { color: #999; font-size: 10.5px; margin-left: 4px; }
 </div>
 <div class="cards" id="cards"></div>
 <div class="chartBox"><canvas id="ch"></canvas></div>
-<div class="chartCap" style="font-size:12px"><b style="color:#c0392b">※ 이익비중이 시총비중보다 높은 종목만 표시</b> — 전체는 아래 표 참고</div>
+<div class="chartCap" style="font-size:12px"><b style="color:#c0392b">※ 시총 대비 이익(이익/시총)이 시장 평균보다 높은 종목, 비율 순 상위만 표시</b> — 전체는 아래 표 참고</div>
 <h2>전체 종목</h2>
 <div class="tblWrap"><table id="tbl"><thead><tr id="hrow"></tr></thead><tbody id="tbody"></tbody></table></div>
 <div class="note">
@@ -188,15 +188,16 @@ function render() {
   for (const r of rows) r.ratio = (r.gap == null || r.wMk === 0) ? null : r.wOp / r.wMk;
 
   const isMobile = window.innerWidth <= 640;
-  const nBar = isMobile ? 10 : 15;
-  const cd = cov.filter(r => r.gap > 0).sort((a, b) => b.gap - a.gap).slice(0, nBar);
+  const nBar = isMobile ? 15 : 25;
+  const mktYield = sumOp / sumMk * 100;
+  const cd = cov.filter(r => r.gap > 0 && r.capv > 0).sort((a, b) => (b.op / b.capv) - (a.op / a.capv)).slice(0, nBar);
   if (chart) chart.destroy();
   chart = new Chart(document.getElementById('ch'), {
     type: 'bar',
-    data: { labels: cd.map(r => r.name), datasets: [{ label: yl + ' 괴리(pp) 상위 — 이익비중이 시총비중(' + ml + ')보다 높은 종목', data: cd.map(r => +r.gap.toFixed(2)), backgroundColor: '#c0392b' }] },
+    data: { labels: cd.map(r => r.name), datasets: [{ label: yl + ' 이익/시총(%) 상위 — 시장 평균 ' + mktYield.toFixed(1) + '%', data: cd.map(r => +(r.op / r.capv * 100).toFixed(1)), backgroundColor: '#c0392b' }] },
     options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: true, labels: { boxWidth: 12, font: { size: isMobile ? 10 : 11 } } }, tooltip: { callbacks: { afterLabel: c => { const r = cd[c.dataIndex]; return '이익비중 ' + r.wOp.toFixed(2) + '% / 시총비중 ' + r.wMk.toFixed(2) + '%'; } } } },
-      scales: { x: { ticks: { font: { size: isMobile ? 9 : 10 } } }, y: { ticks: { font: { size: isMobile ? 9.5 : 10.5 } } } } }
+      plugins: { legend: { display: true, labels: { boxWidth: 12, font: { size: isMobile ? 10 : 11 } } }, tooltip: { callbacks: { afterLabel: c => { const r = cd[c.dataIndex]; return '시장 평균의 ' + (r.op / r.capv * 100 / mktYield).toFixed(1) + '배 · 이익비중 ' + r.wOp.toFixed(2) + '% / 시총비중 ' + r.wMk.toFixed(2) + '%'; } } } },
+      scales: { x: { ticks: { font: { size: isMobile ? 9 : 10 }, callback: v => v + '%' } }, y: { ticks: { font: { size: isMobile ? 9.5 : 10.5 } } } } }
   });
 
   const hr = document.getElementById('hrow');
