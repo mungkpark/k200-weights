@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KOSPI 200 영업이익 비중 vs 시총 비중</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.js" integrity="sha384-iU8HYtnGQ8Cy4zl7gbNMOhsDTTKX02BTXptVP/vqAWIaTfM7isw76iyZCsjL2eVi" crossorigin="anonymous"></script>
+<style>
+:root { color-scheme: light; }
+* { box-sizing: border-box; }
+body { margin: 0; padding: 16px; background: #fafaf8; color: #1a1a1a; font-family: 'Segoe UI', 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif; font-size: 13px; }
+h1 { font-size: 17px; margin: 0 0 4px; }
+h2 { font-size: 14px; margin: 18px 0 8px; }
+.meta { color: #666; font-size: 11.5px; margin-bottom: 12px; line-height: 1.5; }
+.controls { display: flex; gap: 6px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
+.controls button { padding: 5px 12px; border: 1px solid #ccc; background: #fff; border-radius: 6px; cursor: pointer; font-size: 12.5px; white-space: nowrap; }
+.controls button.on { background: #222; color: #fff; border-color: #222; }
+.controls input { padding: 5px 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 12.5px; width: 150px; }
+.cards { display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+.card { background: #fff; border: 1px solid #e5e5e0; border-radius: 8px; padding: 10px 14px; min-width: 120px; flex: 1 1 auto; }
+.card .v { font-size: 16px; font-weight: 600; }
+.card .k { font-size: 11px; color: #777; }
+.chartBox { background: #fff; border: 1px solid #e5e5e0; border-radius: 8px; padding: 12px; height: 420px; margin-bottom: 6px; position: relative; }
+.chartCap { color: #888; font-size: 11px; margin: 0 2px 14px; }
+.tblWrap { overflow-x: auto; -webkit-overflow-scrolling: touch; border: 1px solid #e5e5e0; border-radius: 8px; background: #fff; }
+table { width: 100%; border-collapse: collapse; background: #fff; min-width: 640px; }
+th { background: #f0f0ec; padding: 7px 8px; text-align: right; cursor: pointer; user-select: none; white-space: nowrap; font-size: 12px; position: sticky; top: 0; }
+th:first-child, td:first-child { text-align: left; position: sticky; left: 0; background: inherit; }
+th:first-child { background: #f0f0ec; z-index: 2; }
+td:first-child { background: #fff; }
+th .arr { color: #222; font-size: 10px; }
+td { padding: 5px 8px; text-align: right; border-top: 1px solid #f0f0ee; white-space: nowrap; font-variant-numeric: tabular-nums; }
+td.nm { max-width: 170px; overflow: hidden; text-overflow: ellipsis; }
+td .code { color: #999; font-size: 10.5px; margin-left: 4px; }
+.pos { color: #c0392b; } .neg { color: #888; } .na { color: #bbb; }
+#duoTbl table { min-width: 480px; }
+#duoTbl th { cursor: default; }
+.note { color: #888; font-size: 11px; margin-top: 10px; line-height: 1.6; }
+@media (max-width: 640px) {
+  body { padding: 10px; font-size: 12px; }
+  h1 { font-size: 15px; }
+  .meta { font-size: 10.5px; }
+  .controls input { width: 100%; }
+  .cards { gap: 6px; }
+  .card { padding: 8px 10px; min-width: 96px; }
+  .card .v { font-size: 14px; }
+  .chartBox { height: 320px; padding: 8px; }
+  th, td { padding: 5px 6px; font-size: 11px; }
+  td.nm { max-width: 120px; }
+  td .code { display: none; }
+}
+</style>
+</head>
+<body>
+<h1>KOSPI 200 · 영업이익 비중 vs 시가총액 비중</h1>
+<div class="meta" id="meta"></div>
+<h2>반도체(삼성전자+SK하이닉스) — 연도별 이익비중 합계 vs 시총비중 합계</h2>
+<div class="chartBox" style="height:340px"><canvas id="ch2"></canvas></div>
+<div class="tblWrap" id="duoTbl" style="margin-bottom:14px"></div>
+<div class="controls">
+  <button data-y="24">2024 실적</button>
+  <button data-y="25">2025 실적</button>
+  <button data-y="26">2026E</button>
+  <button data-y="27">2027E</button>
+  <input id="q" placeholder="종목명/코드 검색">
+</div>
+<div class="cards" id="cards"></div>
+<div class="chartBox"><canvas id="ch"></canvas></div>
+<div class="chartCap">※ 차트는 <b>괴리(영업이익 비중 − 시총 비중)가 높은 상위 종목만</b> 표시합니다. 전체 종목은 아래 표에서 확인하세요.</div>
+<h2>전체 종목</h2>
+<div class="tblWrap"><table id="tbl"><thead><tr id="hrow"></tr></thead><tbody id="tbody"></tbody></table></div>
+<div class="note">
+· 2024·2025는 확정 실적(IFRS 연결), 2026E·2027E는 FnGuide 컨센서스(최근 3개월 증권사 추정치 평균). 단위: 조원.<br>
+· <b>시총 기준 시점</b>: 실적 연도(2024·2025)는 해당 연도 말 시가총액(기말 PBR×BPS×보통주 수로 산출, 오차 ±1% 내외), 추정 연도(2026E·2027E)는 현재 시가총액 기준. 같은 시점의 이익과 시총을 비교합니다.<br>
+· 비중은 해당 연도 값이 모두 존재하는 종목(커버리지 유니버스)만으로 재계산. 괴리(pp) = 영업이익 비중 − 시총 비중. 양수(빨강)면 시총 대비 이익 기여가 큰 종목. 적자 종목은 비중이 음수로 표시됩니다.<br>
+· 시가총액: FnGuide(보통주) 기준.
+</div>
+<script>
+const DATA = /*__DATA_START__*/{}/*__DATA_END__*/;
+const YEARS = {
+  '24': {f:'op24', mk:'mk24', label:'2024 실적', mkLabel:'24년말'},
+  '25': {f:'op25', mk:'mk25', label:'2025 실적', mkLabel:'25년말'},
+  '26': {f:'op26', mk:'mktcap', label:'2026E', mkLabel:'현재'},
+  '27': {f:'op27', mk:'mktcap', label:'2027E', mkLabel:'현재'}
+};
+const YEAR_ORDER = ['24','25','26','27'];
+let year = localStorage.getItem('k200y2') || '26';
+if (!YEARS[year]) year = '26';
+let sortKey = 'gap', sortDir = -1, query = '';
+
+function buildFor(yk) {
+  const f = YEARS[yk].f, mkf = YEARS[yk].mk;
+  const rows = DATA.rows.map(r => ({...r, op: r[f], capv: r[mkf]}));
+  const cov = rows.filter(r => r.op != null && r.capv != null);
+  const sumOp = cov.reduce((s, r) => s + r.op, 0);
+  const sumMk = cov.reduce((s, r) => s + r.capv, 0);
+  for (const r of rows) {
+    if (r.op == null || r.capv == null) { r.wOp = null; r.wMk = null; r.gap = null; continue; }
+    r.wOp = r.op / sumOp * 100;
+    r.wMk = r.capv / sumMk * 100;
+    r.gap = r.wOp - r.wMk;
+  }
+  return { rows, cov, sumOp, sumMk };
+}
+
+function fmt(v, d) { return v == null ? '<span class="na">N/A</span>' : v.toLocaleString('ko-KR', {minimumFractionDigits: d, maximumFractionDigits: d}); }
+function cls(v) { return v == null ? '' : v >= 0 ? 'pos' : 'neg'; }
+
+const COLS = [
+  ['name', '종목'], ['capv', '시총(조)'], ['wMk', '시총비중%'],
+  ['op', '영업이익(조)'], ['wOp', '이익비중%'], ['gap', '괴리(pp)'], ['ratio', '이익/시총']
+];
+
+let chart, chart2;
+
+function renderDuo() {
+  const isMobile = window.innerWidth <= 640;
+  const codes = [['005930','삼성전자'], ['000660','SK하이닉스']];
+  const labels = YEAR_ORDER.map(k => YEARS[k].label);
+  const per = { '005930': {wOps:[],wMks:[]}, '000660': {wOps:[],wMks:[]} };
+  const totOp = [], totMk = [];
+  for (const yk of YEAR_ORDER) {
+    const { rows } = buildFor(yk);
+    let so = 0, sm = 0, any = false;
+    for (const [code] of codes) {
+      const r = rows.find(x => x.code === code);
+      per[code].wOps.push(r && r.wOp != null ? +r.wOp.toFixed(2) : null);
+      per[code].wMks.push(r && r.wMk != null ? +r.wMk.toFixed(2) : null);
+      if (r && r.wOp != null) { so += r.wOp; any = true; }
+      if (r && r.wMk != null) sm += r.wMk;
+    }
+    totOp.push(any ? +so.toFixed(2) : null); totMk.push(any ? +sm.toFixed(2) : null);
+  }
+  const datasets = [
+    { label:'삼성전자 이익비중', data: per['005930'].wOps, backgroundColor:'#c0392b', stack:'op' },
+    { label:'SK하이닉스 이익비중', data: per['000660'].wOps, backgroundColor:'#e67e22', stack:'op' },
+    { label:'삼성전자 시총비중', data: per['005930'].wMks, backgroundColor:'#7a7a76', stack:'mk' },
+    { label:'SK하이닉스 시총비중', data: per['000660'].wMks, backgroundColor:'#c2c2bc', stack:'mk' }
+  ];
+  if (chart2) chart2.destroy();
+  chart2 = new Chart(document.getElementById('ch2'), {
+    type: 'bar',
+    data: { labels, datasets },
+    options: { responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { labels: { boxWidth: 12, font: { size: isMobile ? 9 : 11 } } },
+        tooltip: { callbacks: {
+          label: c => c.dataset.label + ': ' + c.parsed.y + '%',
+          footer: items => { const i = items[0].dataIndex; return '합산 이익비중 ' + (totOp[i]==null?'N/A':totOp[i].toFixed(1)+'%') + ' vs 합산 시총비중 ' + (totMk[i]==null?'N/A':totMk[i].toFixed(1)+'%') + (totOp[i]!=null&&totMk[i]!=null ? ' (차이 ' + (totOp[i]-totMk[i]>0?'+':'') + (totOp[i]-totMk[i]).toFixed(1) + 'pp)' : ''); }
+        } }
+      },
+      scales: { x: { stacked: true, ticks: { font: { size: isMobile ? 10 : 11 } } }, y: { stacked: true, title: { display: !isMobile, text: '비중(%)' }, ticks: { font: { size: isMobile ? 9 : 10 } } } } }
+  });
+  let dhtml = '<table><thead><tr><th>구분</th>';
+  for (const l of labels) dhtml += '<th>' + l + '</th>';
+  dhtml += '</tr></thead><tbody>';
+  const fmtRow = (nm, arr, bold, colorCls) => {
+    let s = '<tr><td class="nm"' + (bold ? ' style="font-weight:600"' : '') + '>' + nm + '</td>';
+    for (const v of arr) s += '<td' + (bold ? ' style="font-weight:600"' : '') + (colorCls ? ' class="' + colorCls + '"' : '') + '>' + (v == null ? '<span class="na">N/A</span>' : v.toFixed(2)) + '</td>';
+    return s + '</tr>';
+  };
+  dhtml += fmtRow('삼성전자 이익비중%', per['005930'].wOps, false, 'pos');
+  dhtml += fmtRow('SK하이닉스 이익비중%', per['000660'].wOps, false, 'pos');
+  dhtml += fmtRow('▶ 합산 이익비중%', totOp, true, 'pos');
+  dhtml += fmtRow('삼성전자 시총비중%', per['005930'].wMks, false, null);
+  dhtml += fmtRow('SK하이닉스 시총비중%', per['000660'].wMks, false, null);
+  dhtml += fmtRow('▶ 합산 시총비중%', totMk, true, null);
+  let s = '<tr><td class="nm" style="font-weight:600">차이 (이익합−시총합, pp)</td>';
+  for (let i = 0; i < labels.length; i++) {
+    const d = (totOp[i] == null || totMk[i] == null) ? null : totOp[i] - totMk[i];
+    s += '<td style="font-weight:600" class="' + (d == null ? '' : cls(d)) + '">' + (d == null ? '<span class="na">N/A</span>' : (d > 0 ? '+' : '') + d.toFixed(2)) + '</td>';
+  }
+  dhtml += s + '</tr>';
+  dhtml += '</tbody></table>';
+  dhtml += '<div class="chartCap" style="margin:6px 8px 8px">※ 가설 검증: 두 스택 막대(빨강계=이익비중 합, 회색계=시총비중 합)의 높이가 같으면 "반도체 시총비중 = 이익비중" 가설이 성립. 차이가 +면 시총이 이익 기여 대비 저평가, −면 고평가. 시총 기준: 2024·2025는 해당 연도 말, 2026E·2027E는 현재.</div>';
+  document.getElementById('duoTbl').innerHTML = dhtml;
+}
+
+function render() {
+  const { rows, cov, sumOp, sumMk } = buildFor(year);
+  const yl = YEARS[year].label, ml = YEARS[year].mkLabel;
+  document.querySelectorAll('.controls button').forEach(b => b.classList.toggle('on', b.dataset.y === year));
+  document.getElementById('meta').innerHTML =
+    '시총 기준 <b>' + ml + '</b> (현재 기준일 ' + DATA.asofMkt + ') · 컨센서스 수집일 <b>' + DATA.asofCons + '</b> · 커버리지 <b>' + cov.length + '/' + rows.length + '</b>종목 (비중은 커버리지 유니버스 기준)';
+  document.getElementById('cards').innerHTML =
+    '<div class="card"><div class="v">' + (sumMk/10000).toLocaleString('ko-KR',{maximumFractionDigits:0}) + '조</div><div class="k">커버리지 시총 합계 (' + ml + ')</div></div>' +
+    '<div class="card"><div class="v">' + (sumOp/10000).toLocaleString('ko-KR',{maximumFractionDigits:0}) + '조</div><div class="k">' + yl + ' 영업이익 합계</div></div>' +
+    '<div class="card"><div class="v">' + (sumOp/sumMk*100).toFixed(1) + '%</div><div class="k">이익합계/시총합계</div></div>';
+
+  for (const r of rows) r.ratio = (r.gap == null || r.wMk === 0) ? null : r.wOp / r.wMk;
+
+  const isMobile = window.innerWidth <= 640;
+  const nBar = isMobile ? 10 : 15;
+  const cd = cov.filter(r => r.gap > 0).sort((a, b) => b.gap - a.gap).slice(0, nBar);
+  if (chart) chart.destroy();
+  chart = new Chart(document.getElementById('ch'), {
+    type: 'bar',
+    data: { labels: cd.map(r => r.name), datasets: [{ label: yl + ' 괴리(pp) 상위 — 이익비중이 시총비중(' + ml + ')보다 높은 종목', data: cd.map(r => +r.gap.toFixed(2)), backgroundColor: '#c0392b' }] },
+    options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: true, labels: { boxWidth: 12, font: { size: isMobile ? 10 : 11 } } }, tooltip: { callbacks: { afterLabel: c => { const r = cd[c.dataIndex]; return '이익비중 ' + r.wOp.toFixed(2) + '% / 시총비중 ' + r.wMk.toFixed(2) + '%'; } } } },
+      scales: { x: { ticks: { font: { size: isMobile ? 9 : 10 } } }, y: { ticks: { font: { size: isMobile ? 9.5 : 10.5 } } } } }
+  });
+
+  const hr = document.getElementById('hrow');
+  hr.innerHTML = COLS.map(c => '<th data-k="' + c[0] + '">' + c[1] + ' ' + (sortKey === c[0] ? '<span class="arr">' + (sortDir > 0 ? '▲' : '▼') + '</span>' : '') + '</th>').join('');
+  hr.querySelectorAll('th').forEach(th => th.onclick = () => {
+    const k = th.dataset.k;
+    if (sortKey === k) sortDir *= -1; else { sortKey = k; sortDir = k === 'name' ? 1 : -1; }
+    render();
+  });
+  let list = rows.filter(r => !query || r.name.includes(query) || r.code.includes(query));
+  list.sort((a, b) => {
+    const va = a[sortKey], vb = b[sortKey];
+    if (sortKey === 'name') return sortDir * a.name.localeCompare(b.name, 'ko');
+    if (va == null) return 1; if (vb == null) return -1;
+    return sortDir * (va - vb);
+  });
+  document.getElementById('tbody').innerHTML = list.map(r =>
+    '<tr><td class="nm">' + r.name + '<span class="code">' + r.code + '</span></td>' +
+    '<td>' + fmt(r.capv == null ? null : r.capv / 10000, 1) + '</td>' +
+    '<td>' + fmt(r.wMk, 2) + '</td>' +
+    '<td>' + (r.op == null ? '<span class="na">N/A</span>' : fmt(r.op / 10000, 2)) + '</td>' +
+    '<td>' + fmt(r.wOp, 2) + '</td>' +
+    '<td class="' + cls(r.gap) + '">' + (r.gap == null ? '<span class="na">N/A</span>' : (r.gap > 0 ? '+' : '') + r.gap.toFixed(2)) + '</td>' +
+    '<td>' + (r.ratio == null ? '<span class="na">N/A</span>' : r.ratio.toFixed(2) + '×') + '</td></tr>').join('');
+}
+
+document.querySelectorAll('.controls button').forEach(b => b.onclick = () => { year = b.dataset.y; localStorage.setItem('k200y2', year); render(); });
+document.getElementById('q').oninput = e => { query = e.target.value.trim(); render(); };
+let rsz; window.addEventListener('resize', () => { clearTimeout(rsz); rsz = setTimeout(() => { render(); renderDuo(); }, 300); });
+render();
+renderDuo();
+</script>
+</body>
+</html>

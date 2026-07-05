@@ -54,7 +54,7 @@ td .code { color: #999; font-size: 10.5px; margin-left: 4px; }
 <body>
 <h1>KOSPI 200 · 영업이익 비중 vs 시가총액 비중</h1>
 <div class="meta" id="meta"></div>
-<h2>삼성전자 · SK하이닉스 — 연도별 영업이익 비중 vs 시총 비중</h2>
+<h2>반도체(삼성전자+SK하이닉스) — 연도별 이익비중 합계 vs 시총비중 합계</h2>
 <div class="chartBox" style="height:340px"><canvas id="ch2"></canvas></div>
 <div class="tblWrap" id="duoTbl" style="margin-bottom:14px"></div>
 <div class="controls">
@@ -115,41 +115,64 @@ let chart, chart2;
 
 function renderDuo() {
   const isMobile = window.innerWidth <= 640;
-  const codes = [['005930','삼성전자','#c0392b','#e8a49c'], ['000660','SK하이닉스','#e67e22','#f2c99e']];
+  const codes = [['005930','삼성전자'], ['000660','SK하이닉스']];
   const labels = YEAR_ORDER.map(k => YEARS[k].label);
-  const datasets = [];
-  const tblRows = { '005930': [], '000660': [] };
-  for (const [code, nm, cOp, cMk] of codes) {
-    const wOps = [], wMks = [];
-    for (const yk of YEAR_ORDER) {
-      const { rows } = buildFor(yk);
+  const per = { '005930': {wOps:[],wMks:[]}, '000660': {wOps:[],wMks:[]} };
+  const totOp = [], totMk = [];
+  for (const yk of YEAR_ORDER) {
+    const { rows } = buildFor(yk);
+    let so = 0, sm = 0, any = false;
+    for (const [code] of codes) {
       const r = rows.find(x => x.code === code);
-      wOps.push(r && r.wOp != null ? +r.wOp.toFixed(2) : null);
-      wMks.push(r && r.wMk != null ? +r.wMk.toFixed(2) : null);
-      tblRows[code].push([r && r.wOp, r && r.wMk]);
+      per[code].wOps.push(r && r.wOp != null ? +r.wOp.toFixed(2) : null);
+      per[code].wMks.push(r && r.wMk != null ? +r.wMk.toFixed(2) : null);
+      if (r && r.wOp != null) { so += r.wOp; any = true; }
+      if (r && r.wMk != null) sm += r.wMk;
     }
-    datasets.push({ type:'bar', label: nm + ' 이익비중', data: wOps, backgroundColor: cOp });
-    datasets.push({ type:'line', label: nm + ' 시총비중', data: wMks, borderColor: cMk, backgroundColor: cMk, borderDash: [6,4], pointRadius: 3, tension: 0 });
+    totOp.push(any ? +so.toFixed(2) : null); totMk.push(any ? +sm.toFixed(2) : null);
   }
+  const datasets = [
+    { label:'삼성전자 이익비중', data: per['005930'].wOps, backgroundColor:'#c0392b', stack:'op' },
+    { label:'SK하이닉스 이익비중', data: per['000660'].wOps, backgroundColor:'#e67e22', stack:'op' },
+    { label:'삼성전자 시총비중', data: per['005930'].wMks, backgroundColor:'#7a7a76', stack:'mk' },
+    { label:'SK하이닉스 시총비중', data: per['000660'].wMks, backgroundColor:'#c2c2bc', stack:'mk' }
+  ];
   if (chart2) chart2.destroy();
   chart2 = new Chart(document.getElementById('ch2'), {
+    type: 'bar',
     data: { labels, datasets },
     options: { responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { labels: { boxWidth: 12, font: { size: isMobile ? 9.5 : 11 } } }, tooltip: { callbacks: { label: c => c.dataset.label + ': ' + c.parsed.y + '%' } } },
-      scales: { y: { title: { display: !isMobile, text: '비중(%)' }, ticks: { font: { size: isMobile ? 9 : 10 } } }, x: { ticks: { font: { size: isMobile ? 10 : 11 } } } } }
+      plugins: {
+        legend: { labels: { boxWidth: 12, font: { size: isMobile ? 9 : 11 } } },
+        tooltip: { callbacks: {
+          label: c => c.dataset.label + ': ' + c.parsed.y + '%',
+          footer: items => { const i = items[0].dataIndex; return '합산 이익비중 ' + (totOp[i]==null?'N/A':totOp[i].toFixed(1)+'%') + ' vs 합산 시총비중 ' + (totMk[i]==null?'N/A':totMk[i].toFixed(1)+'%') + (totOp[i]!=null&&totMk[i]!=null ? ' (차이 ' + (totOp[i]-totMk[i]>0?'+':'') + (totOp[i]-totMk[i]).toFixed(1) + 'pp)' : ''); }
+        } }
+      },
+      scales: { x: { stacked: true, ticks: { font: { size: isMobile ? 10 : 11 } } }, y: { stacked: true, title: { display: !isMobile, text: '비중(%)' }, ticks: { font: { size: isMobile ? 9 : 10 } } } } }
   });
-  let dhtml = '<table><thead><tr><th>종목</th><th>구분</th>';
+  let dhtml = '<table><thead><tr><th>구분</th>';
   for (const l of labels) dhtml += '<th>' + l + '</th>';
   dhtml += '</tr></thead><tbody>';
-  for (const [code, nm] of codes) {
-    dhtml += '<tr><td rowspan="2" class="nm"><b>' + nm + '</b></td><td style="text-align:right">이익비중%</td>';
-    for (const x of tblRows[code]) dhtml += '<td class="pos">' + (x[0] == null ? '<span class="na">N/A</span>' : x[0].toFixed(2)) + '</td>';
-    dhtml += '</tr><tr><td style="text-align:right">시총비중%</td>';
-    for (const x of tblRows[code]) dhtml += '<td>' + (x[1] == null ? '<span class="na">N/A</span>' : x[1].toFixed(2)) + '</td>';
-    dhtml += '</tr>';
+  const fmtRow = (nm, arr, bold, colorCls) => {
+    let s = '<tr><td class="nm"' + (bold ? ' style="font-weight:600"' : '') + '>' + nm + '</td>';
+    for (const v of arr) s += '<td' + (bold ? ' style="font-weight:600"' : '') + (colorCls ? ' class="' + colorCls + '"' : '') + '>' + (v == null ? '<span class="na">N/A</span>' : v.toFixed(2)) + '</td>';
+    return s + '</tr>';
+  };
+  dhtml += fmtRow('삼성전자 이익비중%', per['005930'].wOps, false, 'pos');
+  dhtml += fmtRow('SK하이닉스 이익비중%', per['000660'].wOps, false, 'pos');
+  dhtml += fmtRow('▶ 합산 이익비중%', totOp, true, 'pos');
+  dhtml += fmtRow('삼성전자 시총비중%', per['005930'].wMks, false, null);
+  dhtml += fmtRow('SK하이닉스 시총비중%', per['000660'].wMks, false, null);
+  dhtml += fmtRow('▶ 합산 시총비중%', totMk, true, null);
+  let s = '<tr><td class="nm" style="font-weight:600">차이 (이익합−시총합, pp)</td>';
+  for (let i = 0; i < labels.length; i++) {
+    const d = (totOp[i] == null || totMk[i] == null) ? null : totOp[i] - totMk[i];
+    s += '<td style="font-weight:600" class="' + (d == null ? '' : cls(d)) + '">' + (d == null ? '<span class="na">N/A</span>' : (d > 0 ? '+' : '') + d.toFixed(2)) + '</td>';
   }
+  dhtml += s + '</tr>';
   dhtml += '</tbody></table>';
-  dhtml += '<div class="chartCap" style="margin:6px 8px 8px">※ 시총비중 기준 시점: 2024·2025는 해당 연도 말, 2026E·2027E는 현재. 실적 연도는 "그 해의 이익 vs 그 해 말 시총", 추정 연도는 "미래 이익 vs 지금 시총"을 비교합니다.</div>';
+  dhtml += '<div class="chartCap" style="margin:6px 8px 8px">※ 가설 검증: 두 스택 막대(빨강계=이익비중 합, 회색계=시총비중 합)의 높이가 같으면 "반도체 시총비중 = 이익비중" 가설이 성립. 차이가 +면 시총이 이익 기여 대비 저평가, −면 고평가. 시총 기준: 2024·2025는 해당 연도 말, 2026E·2027E는 현재.</div>';
   document.getElementById('duoTbl').innerHTML = dhtml;
 }
 
