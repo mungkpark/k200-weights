@@ -66,14 +66,12 @@ td .code { color: #999; font-size: 10.5px; margin-left: 4px; }
 </div>
 <div class="cards" id="cards"></div>
 <div class="chartBox"><canvas id="ch"></canvas></div>
-<div class="chartCap">※ 차트는 <b>괴리(영업이익 비중 − 시총 비중)가 높은 상위 종목만</b> 표시합니다. 전체 종목은 아래 표에서 확인하세요.</div>
+<div class="chartCap" style="font-size:12px"><b style="color:#c0392b">※ 이익비중이 시총비중보다 높은 종목만 표시</b> — 전체는 아래 표 참고</div>
 <h2>전체 종목</h2>
 <div class="tblWrap"><table id="tbl"><thead><tr id="hrow"></tr></thead><tbody id="tbody"></tbody></table></div>
 <div class="note">
-· 2024·2025는 확정 실적(IFRS 연결), 2026E·2027E는 FnGuide 컨센서스(최근 3개월 증권사 추정치 평균). 단위: 조원.<br>
-· <b>시총 기준 시점</b>: 실적 연도(2024·2025)는 해당 연도 말 시가총액(기말 PBR×BPS×보통주 수로 산출, 오차 ±1% 내외), 추정 연도(2026E·2027E)는 현재 시가총액 기준. 같은 시점의 이익과 시총을 비교합니다.<br>
-· 비중은 해당 연도 값이 모두 존재하는 종목(커버리지 유니버스)만으로 재계산. 괴리(pp) = 영업이익 비중 − 시총 비중. 양수(빨강)면 시총 대비 이익 기여가 큰 종목. 적자 종목은 비중이 음수로 표시됩니다.<br>
-· 시가총액: FnGuide(보통주) 기준.
+· 영업이익: 2024·2025 실적 / 2026E·2027E 증권사 컨센서스(FnGuide). 시총: 실적 연도는 그 해 연말, 추정 연도는 현재 기준.<br>
+· 괴리(pp) = 이익비중 − 시총비중. 비중은 데이터 있는 종목 기준으로 재계산.
 </div>
 <script>
 const DATA = /*__DATA_START__*/{}/*__DATA_END__*/;
@@ -172,7 +170,7 @@ function renderDuo() {
   }
   dhtml += s + '</tr>';
   dhtml += '</tbody></table>';
-  dhtml += '<div class="chartCap" style="margin:6px 8px 8px">※ 가설 검증: 빨간 실선(이익비중 합)과 회색 점선(시총비중 합)이 같이 가면 "반도체 시총비중 = 이익비중" 가설이 성립. 실선이 위면 이익 기여 대비 시총 저평가, 아래면 고평가.<br>† 2020~2023 분모: 이익 = 코스피 12월결산 상장사 연결 영업이익 합계(거래소 공표, 금융업 제외 / 2020년은 2021년 발표 증가율 +73.6%로 역산), 시총 = 코스피 전체 연말 시가총액. 금융업 제외 분모 특성상 이익비중이 다소 높게 표시될 수 있음. 반도체 연말 시총 = 연말 종가 × 보통주 수.<br>2024·2025 분모: KOSPI 200(당사 수집, 금융 포함) · 해당 연도 말 시총 / 2026E~ 분모: KOSPI 200 컨센서스 커버리지 · 현재 시총.</div>';
+  dhtml += '<div class="chartCap" style="margin:6px 8px 8px"><b>빨간 실선(이익비중)이 회색 점선(시총비중) 위에 있으면 = 이익 기여 대비 시총이 덜 반영된 상태.</b> † 2020~2023은 코스피 전체·공표 통계 기준.</div>';
   document.getElementById('duoTbl').innerHTML = dhtml;
 }
 
