@@ -112,7 +112,7 @@ td .code { color: var(--ink3); font-size: 10.5px; margin-left: 5px; font-weight:
 <div class="cards" id="cards"></div>
 <div class="chartBox"><canvas id="ch"></canvas></div>
 <div class="chartCap"><b style="color:var(--accent)">이익의 몫이 주가의 몫보다 많이 큰 종목 순서</b> — 버는 것에 비해 주가가 낮은 종목이 위로 옵니다.</div>
-<div class="secHead" style="margin-top:26px"><div><div class="t" style="color:var(--accent)">이익 대비 저평가 종목 순위 <span id="rankYear" style="font-size:12px;font-weight:700;color:#fff;background:var(--ink);padding:2px 9px;border-radius:6px;vertical-align:middle;margin-left:4px"></span></div><div class="sub">‘이익의 몫 ÷ 주가의 몫’이 큰 순서 · 1배보다 크면 = 버는 것보다 주가가 낮음 · <b>위 연도 버튼에 따라 바뀜</b></div></div></div>
+<div class="secHead" style="margin-top:26px"><div><div class="t" style="color:var(--accent)">이익 대비 저평가 종목 순위 <span id="rankYear" style="font-size:12px;font-weight:700;color:#fff;background:var(--ink);padding:2px 9px;border-radius:6px;vertical-align:middle;margin-left:4px"></span></div><div class="sub"><b>1배 이상(=버는 것보다 주가가 낮은 저평가 종목)만</b> 이익÷주가 배수 높은 순으로 표시 · 위 연도 버튼에 따라 바뀜</div></div></div>
 <div class="tblWrap"><table id="tbl"><thead><tr id="hrow"></tr></thead><tbody id="tbody"></tbody></table></div>
 <div class="note">
 · ‘이익의 몫’ = 그 회사 영업이익 ÷ 코스피 전체 영업이익 합계 · ‘주가의 몫’ = 그 회사 시가총액 ÷ 전체 시가총액 합계.<br>
@@ -298,7 +298,7 @@ function render() {
     if (sortKey === k) sortDir *= -1; else { sortKey = k; sortDir = k === 'name' ? 1 : -1; }
     render();
   });
-  let list = rows.filter(r => r.op != null && r.capv != null && r.ratio != null);
+  let list = rows.filter(r => r.op != null && r.capv != null && r.ratio != null && r.ratio >= 1);
   list.sort((a, b) => {
     const va = a[sortKey], vb = b[sortKey];
     if (sortKey === 'name') return sortDir * a.name.localeCompare(b.name, 'ko');
