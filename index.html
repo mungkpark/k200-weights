@@ -10,27 +10,31 @@
 * { box-sizing: border-box; }
 body { margin: 0; padding: 16px; background: #fafaf8; color: #1a1a1a; font-family: 'Segoe UI', 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif; font-size: 13px; }
 h1 { font-size: 17px; margin: 0 0 4px; }
+h2 { font-size: 14px; margin: 18px 0 8px; }
 .meta { color: #666; font-size: 11.5px; margin-bottom: 12px; line-height: 1.5; }
 .controls { display: flex; gap: 6px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
 .controls button { padding: 5px 12px; border: 1px solid #ccc; background: #fff; border-radius: 6px; cursor: pointer; font-size: 12.5px; white-space: nowrap; }
-.controls button.on { background: #1a4d8f; color: #fff; border-color: #1a4d8f; }
+.controls button.on { background: #222; color: #fff; border-color: #222; }
 .controls input { padding: 5px 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 12.5px; width: 150px; }
 .cards { display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
 .card { background: #fff; border: 1px solid #e5e5e0; border-radius: 8px; padding: 10px 14px; min-width: 120px; flex: 1 1 auto; }
 .card .v { font-size: 16px; font-weight: 600; }
 .card .k { font-size: 11px; color: #777; }
-#chartWrap { background: #fff; border: 1px solid #e5e5e0; border-radius: 8px; padding: 12px; height: 420px; margin-bottom: 14px; position: relative; }
+.chartBox { background: #fff; border: 1px solid #e5e5e0; border-radius: 8px; padding: 12px; height: 420px; margin-bottom: 6px; position: relative; }
+.chartCap { color: #888; font-size: 11px; margin: 0 2px 14px; }
 .tblWrap { overflow-x: auto; -webkit-overflow-scrolling: touch; border: 1px solid #e5e5e0; border-radius: 8px; background: #fff; }
 table { width: 100%; border-collapse: collapse; background: #fff; min-width: 640px; }
 th { background: #f0f0ec; padding: 7px 8px; text-align: right; cursor: pointer; user-select: none; white-space: nowrap; font-size: 12px; position: sticky; top: 0; }
 th:first-child, td:first-child { text-align: left; position: sticky; left: 0; background: inherit; }
 th:first-child { background: #f0f0ec; z-index: 2; }
 td:first-child { background: #fff; }
-th .arr { color: #1a4d8f; font-size: 10px; }
+th .arr { color: #222; font-size: 10px; }
 td { padding: 5px 8px; text-align: right; border-top: 1px solid #f0f0ee; white-space: nowrap; font-variant-numeric: tabular-nums; }
 td.nm { max-width: 170px; overflow: hidden; text-overflow: ellipsis; }
 td .code { color: #999; font-size: 10.5px; margin-left: 4px; }
-.pos { color: #c0392b; } .neg { color: #1a6fb5; } .na { color: #bbb; }
+.pos { color: #c0392b; } .neg { color: #888; } .na { color: #bbb; }
+#duoTbl table { min-width: 480px; }
+#duoTbl th { cursor: default; }
 .note { color: #888; font-size: 11px; margin-top: 10px; line-height: 1.6; }
 @media (max-width: 640px) {
   body { padding: 10px; font-size: 12px; }
@@ -40,7 +44,7 @@ td .code { color: #999; font-size: 10.5px; margin-left: 4px; }
   .cards { gap: 6px; }
   .card { padding: 8px 10px; min-width: 96px; }
   .card .v { font-size: 14px; }
-  #chartWrap { height: 320px; padding: 8px; }
+  .chartBox { height: 320px; padding: 8px; }
   th, td { padding: 5px 6px; font-size: 11px; }
   td.nm { max-width: 120px; }
   td .code { display: none; }
@@ -58,7 +62,12 @@ td .code { color: #999; font-size: 10.5px; margin-left: 4px; }
   <input id="q" placeholder="종목명/코드 검색">
 </div>
 <div class="cards" id="cards"></div>
-<div id="chartWrap"><canvas id="ch"></canvas></div>
+<div class="chartBox"><canvas id="ch"></canvas></div>
+<div class="chartCap">※ 차트는 <b>괴리(영업이익 비중 − 시총 비중)가 높은 상위 종목만</b> 표시합니다. 전체 종목은 아래 표에서 확인하세요.</div>
+<h2>삼성전자 · SK하이닉스 — 연도별 영업이익 비중 vs 시총 비중</h2>
+<div class="chartBox" style="height:340px"><canvas id="ch2"></canvas></div>
+<div class="tblWrap" id="duoTbl" style="margin-bottom:14px"></div>
+<h2>전체 종목</h2>
 <div class="tblWrap"><table id="tbl"><thead><tr id="hrow"></tr></thead><tbody id="tbody"></tbody></table></div>
 <div class="note">
 · 2024·2025는 확정 실적(IFRS 연결), 2026E·2027E는 FnGuide 컨센서스(최근 3개월 증권사 추정치 평균). 단위: 조원.<br>
@@ -69,12 +78,13 @@ td .code { color: #999; font-size: 10.5px; margin-left: 4px; }
 <script>
 const DATA = /*__DATA_START__*/{"asofMkt":"2026-07-03","asofCons":"2026-07-05","rows":[{"code":"005930","name":"삼성전자","mktcap":16720357,"op26":3729406,"op27":5253169,"op24":327260,"op25":436011},{"code":"000660","name":"SK하이닉스","mktcap":15586801,"op26":2745183,"op27":4047301,"op24":234673,"op25":472063},{"code":"402340","name":"SK스퀘어","mktcap":2012365,"op26":430392,"op27":541748,"op24":39206,"op25":87974},{"code":"009150","name":"삼성전기","mktcap":1438601,"op26":16031,"op27":28264,"op24":7350,"op25":9133},{"code":"005380","name":"현대차","mktcap":986932,"op26":119489,"op27":133697,"op24":142396,"op25":114679},{"code":"373220","name":"LG에너지솔루션","mktcap":828360,"op26":11939,"op27":40478,"op24":5754,"op25":13461},{"code":"032830","name":"삼성생명","mktcap":741000,"op26":33019,"op27":52718,"op24":24998,"op25":25805},{"code":"028260","name":"삼성물산","mktcap":659211,"op26":36331,"op27":41180,"op24":29834,"op25":32927},{"code":"207940","name":"삼성바이오로직스","mktcap":650851,"op26":24946,"op27":29032,"op24":13214,"op25":20692},{"code":"329180","name":"HD현대중공업","mktcap":619271,"op26":38922,"op27":45762,"op24":7052,"op25":20375},{"code":"105560","name":"KB금융","mktcap":585235,"op26":91842,"op27":94381,"op24":80453,"op25":85177},{"code":"012450","name":"한화에어로스페이스","mktcap":575448,"op26":42599,"op27":54936,"op24":17319,"op25":30893},{"code":"000270","name":"기아","mktcap":566880,"op26":101140,"op27":112000,"op24":126671,"op25":90781},{"code":"034020","name":"두산에너빌리티","mktcap":550883,"op26":11196,"op27":16045,"op24":10176,"op25":7627},{"code":"034730","name":"SK","mktcap":495193,"op26":98504,"op27":115358,"op24":23960,"op25":18185},{"code":"055550","name":"신한지주","mktcap":485097,"op26":76836,"op27":81746,"op24":64587,"op25":70234},{"code":"012330","name":"현대모비스","mktcap":446404,"op26":37209,"op27":42642,"op24":30735,"op25":33575},{"code":"068270","name":"셀트리온","mktcap":410690,"op26":17551,"op27":20839,"op24":4920,"op25":11685},{"code":"006400","name":"삼성SDI","mktcap":379155,"op26":-323,"op27":14414,"op24":3633,"op25":-17224},{"code":"010120","name":"LS ELECTRIC","mktcap":354750,"op26":6555,"op27":9259,"op24":3897,"op25":4264},{"code":"267260","name":"HD현대일렉트릭","mktcap":349297,"op26":12451,"op27":15397,"op24":6690,"op25":9953},{"code":"086790","name":"하나금융지주","mktcap":331436,"op26":60316,"op27":63092,"op24":48552,"op25":53509},{"code":"042660","name":"한화오션","mktcap":320202,"op26":18210,"op27":23283,"op24":2379,"op25":11676},{"code":"298040","name":"효성중공업","mktcap":320018,"op26":10942,"op27":15478,"op24":3625,"op25":7470},{"code":"035420","name":"NAVER","mktcap":313618,"op26":24022,"op27":27663,"op24":19793,"op25":22081},{"code":"066570","name":"LG전자","mktcap":313227,"op26":39163,"op27":43357,"op24":34197,"op25":24784},{"code":"000810","name":"삼성화재","mktcap":274135,"op26":30131,"op27":32791,"op24":26496,"op25":26591},{"code":"009540","name":"HD한국조선해양","mktcap":256553,"op26":56430,"op27":67801,"op24":14341,"op25":39045},{"code":"005490","name":"POSCO홀딩스","mktcap":251592,"op26":32478,"op27":40148,"op24":21736,"op25":18271},{"code":"015760","name":"한국전력","mktcap":244909,"op26":97617,"op27":134651,"op24":83647,"op25":134906},{"code":"000150","name":"두산","mktcap":234325,"op26":17036,"op27":23413,"op24":10038,"op25":10627},{"code":"010130","name":"고려아연","mktcap":226263,"op26":23003,"op27":21049,"op24":7235,"op25":12319},{"code":"006800","name":"미래에셋증권","mktcap":224666,"op26":39441,"op27":26892,"op24":11881,"op25":19151},{"code":"316140","name":"우리금융지주","mktcap":219883,"op26":43303,"op27":47727,"op24":42552,"op25":36748},{"code":"064350","name":"현대로템","mktcap":215447,"op26":11805,"op27":15558,"op24":4566,"op25":10056},{"code":"042700","name":"한미반도체","mktcap":209210,"op26":3694,"op27":5719,"op24":2554,"op25":2514},{"code":"011070","name":"LG이노텍","mktcap":206851,"op26":11303,"op27":13371,"op24":7060,"op25":6650},{"code":"010140","name":"삼성중공업","mktcap":201960,"op26":15089,"op27":20303,"op24":5027,"op25":8622},{"code":"051910","name":"LG화학","mktcap":198717,"op26":14269,"op27":39453,"op24":8749,"op25":11809},{"code":"017670","name":"SK텔레콤","mktcap":187727,"op26":19111,"op27":20293,"op24":18234,"op25":10732},{"code":"011200","name":"HMM","mktcap":180158,"op26":10555,"op27":8264,"op24":35128,"op25":14612},{"code":"033780","name":"KT&G","mktcap":179592,"op26":15048,"op27":16273,"op24":11888,"op25":13437},{"code":"138040","name":"메리츠금융지주","mktcap":179229,"op26":32058,"op27":34092,"op24":31889,"op25":28727},{"code":"079550","name":"LIG디펜스앤에어로스페이스","mktcap":167640,"op26":4513,"op27":6184,"op24":2234,"op25":3194},{"code":"024110","name":"기업은행","mktcap":164270,"op26":37033,"op27":39695,"op24":35941,"op25":36556},{"code":"267250","name":"HD현대","mktcap":163911,"op26":90457,"op27":99220,"op24":29832,"op25":60996},{"code":"096770","name":"SK이노베이션","mktcap":159079,"op26":50971,"op27":31170,"op24":3557,"op25":4487},{"code":"035720","name":"카카오","mktcap":156145,"op26":9371,"op27":10888,"op24":4953,"op25":7320},{"code":"018260","name":"삼성에스디에스","mktcap":155916,"op26":8309,"op27":10623,"op24":9111,"op25":9571},{"code":"278470","name":"에이피알","mktcap":150501,"op26":6869,"op27":9191,"op24":1227,"op25":3655},{"code":"047810","name":"한국항공우주","mktcap":150307,"op26":4736,"op27":6720,"op24":2407,"op25":2692},{"code":"003550","name":"LG","mktcap":149680,"op26":16183,"op27":20529,"op24":9668,"op25":9122},{"code":"086280","name":"현대글로비스","mktcap":146925,"op26":21802,"op27":23353,"op24":17529,"op25":20730},{"code":"003670","name":"포스코퓨처엠","mktcap":145516,"op26":932,"op27":1671,"op24":7,"op25":328},{"code":"272210","name":"한화시스템","mktcap":139989,"op26":2765,"op27":4899,"op24":2193,"op25":1199},{"code":"307950","name":"현대오토에버","mktcap":139588,"op26":2782,"op27":3700,"op24":2244,"op25":2553},{"code":"030200","name":"KT","mktcap":136848,"op26":20744,"op27":22561,"op24":8095,"op25":24691},{"code":"000720","name":"현대건설","mktcap":128282,"op26":8276,"op27":11163,"op24":-12634,"op25":6530},{"code":"071050","name":"한국금융지주","mktcap":125662,"op26":33960,"op27":31556,"op24":11997,"op25":23453},{"code":"010950","name":"S-Oil","mktcap":122940,"op26":34560,"op27":23961,"op24":4222,"op25":2356},{"code":"006260","name":"LS","mktcap":118872,"op26":16669,"op27":18990,"op24":10729,"op25":10526},{"code":"259960","name":"크래프톤","mktcap":112807,"op26":14624,"op27":15763,"op24":11825,"op25":10544},{"code":"323410","name":"카카오뱅크","mktcap":105205,"op26":7088,"op27":8173,"op24":6069,"op25":6494},{"code":"003490","name":"대한항공","mktcap":105127,"op26":8542,"op27":20867,"op24":21102,"op25":11136},{"code":"005940","name":"NH투자증권","mktcap":103162,"op26":21123,"op27":19119,"op24":9011,"op25":14206},{"code":"0126Z0","name":"삼성에피스홀딩스","mktcap":103016,"op26":null,"op27":null,"op24":null,"op25":null},{"code":"443060","name":"HD현대마린솔루션","mktcap":97513,"op26":4395,"op27":5563,"op24":2717,"op25":3501},{"code":"016360","name":"삼성증권","mktcap":96355,"op26":21932,"op27":20387,"op24":12058,"op25":13757},{"code":"028050","name":"삼성E&A","mktcap":96040,"op26":8868,"op27":10323,"op24":9716,"op25":7921},{"code":"005830","name":"DB손해보험","mktcap":95303,"op26":20748,"op27":22959,"op24":24249,"op25":23840},{"code":"352820","name":"하이브","mktcap":92023,"op26":2657,"op27":4992,"op24":1840,"op25":493},{"code":"047050","name":"포스코인터내셔널","mktcap":91128,"op26":13928,"op27":15048,"op24":11578,"op25":11653},{"code":"007660","name":"이수페타시스","mktcap":87944,"op26":3221,"op27":4444,"op24":1019,"op25":2047},{"code":"180640","name":"한진칼","mktcap":87592,"op26":null,"op27":null,"op24":492,"op25":-75},{"code":"003230","name":"삼양식품","mktcap":87308,"op26":7277,"op27":8672,"op24":3446,"op25":5242},{"code":"039490","name":"키움증권","mktcap":84586,"op26":20934,"op27":19887,"op24":10982,"op25":14882},{"code":"161390","name":"한국타이어앤테크놀로지","mktcap":83368,"op26":21324,"op27":23641,"op24":17623,"op25":18411},{"code":"064400","name":"LG씨엔에스","mktcap":75862,"op26":6175,"op27":7035,"op24":5129,"op25":5518},{"code":"047040","name":"대우건설","mktcap":75402,"op26":6753,"op27":7062,"op24":4031,"op25":-8154},{"code":"000880","name":"한화","mktcap":73117,"op26":55277,"op27":67330,"op24":24161,"op25":41469},{"code":"062040","name":"산일전기","mktcap":72866,"op26":2497,"op27":3337,"op24":1092,"op25":1786},{"code":"078930","name":"GS","mktcap":71437,"op26":41970,"op27":33273,"op24":30772,"op25":29361},{"code":"090430","name":"아모레퍼시픽","mktcap":69840,"op26":4596,"op27":5252,"op24":2205,"op25":3358},{"code":"004170","name":"신세계","mktcap":69139,"op26":7565,"op27":8460,"op24":4770,"op25":4800},{"code":"021240","name":"코웨이","mktcap":68007,"op26":9987,"op27":11413,"op24":7954,"op25":8787},{"code":"326030","name":"SK바이오팜","mktcap":67819,"op26":3377,"op27":4497,"op24":963,"op25":2039},{"code":"001440","name":"대한전선","mktcap":66050,"op26":1964,"op27":2356,"op24":1152,"op25":1286},{"code":"241560","name":"두산밥캣","mktcap":60964,"op26":7537,"op27":9146,"op24":8714,"op25":6861},{"code":"032640","name":"LG유플러스","mktcap":60863,"op26":11140,"op27":11942,"op24":8631,"op25":8921},{"code":"009830","name":"한화솔루션","mktcap":59990,"op26":7496,"op27":12306,"op24":-3002,"op25":-3648},{"code":"267270","name":"HD건설기계","mktcap":58321,"op26":6829,"op27":8533,"op24":1904,"op25":1709},{"code":"036570","name":"NC","mktcap":57092,"op26":5049,"op27":5916,"op24":-1092,"op25":161},{"code":"138930","name":"BNK금융지주","mktcap":56262,"op26":11174,"op27":12022,"op24":8759,"op25":9027},{"code":"128940","name":"한미약품","mktcap":55856,"op26":2749,"op27":3104,"op24":2162,"op25":2578},{"code":"029780","name":"삼성카드","mktcap":55844,"op26":8470,"op27":9227,"op24":8854,"op25":8537},{"code":"000100","name":"유한양행","mktcap":55833,"op26":1340,"op27":2182,"op24":549,"op25":1044},{"code":"271560","name":"오리온","mktcap":54945,"op26":6508,"op27":7042,"op24":5436,"op25":5583},{"code":"377300","name":"카카오페이","mktcap":54917,"op26":1388,"op27":1926,"op24":-575,"op25":504},{"code":"034220","name":"LG디스플레이","mktcap":54900,"op26":11083,"op27":15178,"op24":-5606,"op25":5170},{"code":"454910","name":"두산로보틱스","mktcap":53995,"op26":130,"op27":400,"op24":-412,"op25":-595},{"code":"000990","name":"DB하이텍","mktcap":50813,"op26":3627,"op27":4511,"op24":1908,"op25":2773},{"code":"011790","name":"SKC","mktcap":49053,"op26":-604,"op27":845,"op24":-2758,"op25":-3050},{"code":"175330","name":"JB금융지주","mktcap":48005,"op26":10120,"op27":10878,"op24":9061,"op25":9523},{"code":"023530","name":"롯데쇼핑","mktcap":47667,"op26":8024,"op27":8607,"op24":4731,"op25":5470},{"code":"001040","name":"CJ","mktcap":47646,"op26":27187,"op27":30306,"op24":25323,"op25":25277},{"code":"082740","name":"한화엔진","mktcap":43643,"op26":2442,"op27":3679,"op24":715,"op25":1301},{"code":"066970","name":"엘앤에프","mktcap":43286,"op26":2446,"op27":2305,"op24":-5587,"op25":-1568},{"code":"052690","name":"한전기술","mktcap":41430,"op26":738,"op27":993,"op24":709,"op25":355},{"code":"010060","name":"OCI홀딩스","mktcap":40888,"op26":3829,"op27":5389,"op24":1015,"op25":-576},{"code":"002380","name":"KCC","mktcap":40387,"op26":4153,"op27":4725,"op24":4711,"op25":4276},{"code":"069960","name":"현대백화점","mktcap":40175,"op26":4339,"op27":5231,"op24":2840,"op25":3779},{"code":"018880","name":"한온시스템","mktcap":38998,"op26":4294,"op27":4996,"op24":955,"op25":2704},{"code":"088350","name":"한화생명","mktcap":38215,"op26":13570,"op27":14930,"op24":10970,"op25":11473},{"code":"004020","name":"현대제철","mktcap":37432,"op26":4644,"op27":7874,"op24":1595,"op25":2192},{"code":"111770","name":"영원무역","mktcap":36823,"op26":6361,"op27":6987,"op24":3156,"op25":5144},{"code":"051900","name":"LG생활건강","mktcap":36690,"op26":3360,"op27":4020,"op24":4590,"op25":1707},{"code":"022100","name":"포스코DX","mktcap":33372,"op26":null,"op27":null,"op24":1090,"op25":604},{"code":"009420","name":"한올바이오파마","mktcap":32598,"op26":17,"op27":88,"op24":2,"op25":-9},{"code":"035250","name":"강원랜드","mktcap":31556,"op26":2213,"op27":2287,"op24":2858,"op25":2353},{"code":"251270","name":"넷마블","mktcap":31463,"op26":3834,"op27":4404,"op24":2156,"op25":3525},{"code":"001450","name":"현대해상","mktcap":30689,"op26":null,"op27":null,"op24":12441,"op25":12610},{"code":"383220","name":"F&F","mktcap":30607,"op26":5295,"op27":5593,"op24":4507,"op25":4686},{"code":"036460","name":"한국가스공사","mktcap":30371,"op26":22651,"op27":21915,"op24":30034,"op25":21012},{"code":"014680","name":"한솔케미칼","mktcap":30285,"op26":1870,"op27":2367,"op24":1288,"op25":1562},{"code":"097950","name":"CJ제일제당","mktcap":29551,"op26":12921,"op27":14543,"op24":14521,"op25":12336},{"code":"011780","name":"금호석유화학","mktcap":29409,"op26":3738,"op27":4290,"op24":2728,"op25":2718},{"code":"302440","name":"SK바이오사이언스","mktcap":29343,"op26":-1295,"op27":-954,"op24":-1384,"op25":-1235},{"code":"450080","name":"에코프로머티","mktcap":28530,"op26":null,"op27":null,"op24":-647,"op25":-654},{"code":"483650","name":"달바글로벌","mktcap":28340,"op26":1612,"op27":2198,"op24":598,"op25":1015},{"code":"012750","name":"에스원","mktcap":27967,"op26":1961,"op27":2540,"op24":2092,"op25":2346},{"code":"017800","name":"현대엘리베이터","mktcap":27873,"op26":2307,"op27":2674,"op24":2257,"op25":2092},{"code":"139130","name":"iM금융지주","mktcap":27788,"op26":6665,"op27":7160,"op24":2634,"op25":5832},{"code":"011170","name":"롯데케미칼","mktcap":27162,"op26":785,"op27":2720,"op24":-9145,"op25":-9431},{"code":"161890","name":"한국콜마","mktcap":26839,"op26":3099,"op27":3568,"op24":1939,"op25":2396},{"code":"028670","name":"팬오션","mktcap":26568,"op26":5720,"op27":5993,"op24":4712,"op25":4919},{"code":"005850","name":"에스엘","mktcap":26522,"op26":4637,"op27":5074,"op24":3952,"op25":4071},{"code":"026960","name":"동서","mktcap":25473,"op26":null,"op27":null,"op24":445,"op25":453},{"code":"375500","name":"DL이앤씨","mktcap":24841,"op26":5062,"op27":5588,"op24":2709,"op25":3870},{"code":"081660","name":"미스토홀딩스","mktcap":24635,"op26":5590,"op27":5993,"op24":3608,"op25":4748},{"code":"004990","name":"롯데지주","mktcap":24019,"op26":4070,"op27":4638,"op24":3405,"op25":2394},{"code":"000240","name":"한국앤컴퍼니","mktcap":23591,"op26":4574,"op27":4536,"op24":4183,"op25":4116},{"code":"009970","name":"영원무역홀딩스","mktcap":23317,"op26":null,"op27":null,"op24":5170,"op25":7355},{"code":"139480","name":"이마트","mktcap":23043,"op26":5726,"op27":6664,"op24":471,"op25":3225},{"code":"204320","name":"HL만도","mktcap":22727,"op26":4049,"op27":4737,"op24":3588,"op25":3571},{"code":"007340","name":"DN오토모티브","mktcap":22146,"op26":5720,"op27":6500,"op24":5229,"op25":5279},{"code":"004370","name":"농심","mktcap":22019,"op26":2130,"op27":2304,"op24":1631,"op25":1839},{"code":"030000","name":"제일기획","mktcap":21513,"op26":3348,"op27":3652,"op24":3207,"op25":3369},{"code":"071970","name":"HD현대마린엔진","mktcap":21506,"op26":1515,"op27":2029,"op24":332,"op25":759},{"code":"008930","name":"한미사이언스","mktcap":21372,"op26":null,"op27":null,"op24":989,"op25":1387},{"code":"007070","name":"GS리테일","mktcap":20944,"op26":3464,"op27":3725,"op24":2561,"op25":2921},{"code":"282330","name":"BGF리테일","mktcap":20654,"op26":2896,"op27":3179,"op24":2516,"op25":2539},{"code":"051600","name":"한전KPS","mktcap":20318,"op26":1900,"op27":2004,"op24":2095,"op25":1401},{"code":"457190","name":"이수스페셜티케미컬","mktcap":20216,"op26":91,"op27":-17,"op24":142,"op25":16},{"code":"008770","name":"호텔신라","mktcap":19742,"op26":1746,"op27":2239,"op24":-52,"op25":135},{"code":"192820","name":"코스맥스","mktcap":18988,"op26":2320,"op27":2750,"op24":1754,"op25":1958},{"code":"002790","name":"아모레퍼시픽홀딩스","mktcap":18465,"op26":null,"op27":null,"op24":2493,"op25":3680},{"code":"112610","name":"씨에스윈드","mktcap":18450,"op26":3043,"op27":3524,"op24":2555,"op25":3203},{"code":"103140","name":"풍산","mktcap":18384,"op26":3606,"op27":3612,"op24":3238,"op25":2974},{"code":"120110","name":"코오롱인더","mktcap":18028,"op26":2245,"op27":2614,"op24":1587,"op25":1089},{"code":"011210","name":"현대위아","mktcap":17405,"op26":2364,"op27":2897,"op24":2188,"op25":2044},{"code":"000120","name":"CJ대한통운","mktcap":17360,"op26":5226,"op27":5746,"op24":5307,"op25":5081},{"code":"093370","name":"후성","mktcap":16378,"op26":527,"op27":702,"op24":-96,"op25":254},{"code":"001800","name":"오리온홀딩스","mktcap":16069,"op26":6028,"op27":null,"op24":5062,"op25":4877},{"code":"006040","name":"동원산업","mktcap":14765,"op26":5524,"op27":5848,"op24":5013,"op25":5161},{"code":"069620","name":"대웅제약","mktcap":14425,"op26":2065,"op27":2403,"op24":1479,"op25":1968},{"code":"006280","name":"녹십자","mktcap":14246,"op26":747,"op27":972,"op24":321,"op25":692},{"code":"192080","name":"더블유게임즈","mktcap":13826,"op26":2837,"op27":3110,"op24":2487,"op25":2321},{"code":"017960","name":"한국카본","mktcap":13668,"op26":1798,"op27":1964,"op24":454,"op25":1310},{"code":"073240","name":"금호타이어","mktcap":13516,"op26":5746,"op27":6133,"op24":5886,"op25":5759},{"code":"034230","name":"파라다이스","mktcap":13459,"op26":1873,"op27":2260,"op24":1361,"op25":1558},{"code":"361610","name":"SK아이이테크놀로지","mktcap":13110,"op26":-2448,"op27":-938,"op24":-2910,"op25":-2464},{"code":"007310","name":"오뚜기","mktcap":12785,"op26":null,"op27":null,"op24":2220,"op25":1773},{"code":"298020","name":"효성티앤씨","mktcap":12247,"op26":4445,"op27":5259,"op24":2707,"op25":2515},{"code":"004000","name":"롯데정밀화학","mktcap":11726,"op26":1388,"op27":1593,"op24":504,"op25":744},{"code":"001430","name":"세아베스틸지주","mktcap":11368,"op26":1450,"op27":2001,"op24":523,"op25":984},{"code":"000080","name":"하이트진로","mktcap":10604,"op26":1935,"op27":2020,"op24":2081,"op25":1723},{"code":"300720","name":"한일시멘트","mktcap":10289,"op26":1150,"op27":1480,"op24":2714,"op25":1327},{"code":"003090","name":"대웅","mktcap":10285,"op26":null,"op27":null,"op24":2819,"op25":2618},{"code":"003240","name":"태광산업","mktcap":9609,"op26":null,"op27":null,"op24":-4,"op25":-360},{"code":"000210","name":"DL","mktcap":9535,"op26":5348,"op27":5058,"op24":4125,"op25":2985},{"code":"185750","name":"종근당","mktcap":9455,"op26":810,"op27":920,"op24":995,"op25":806},{"code":"005300","name":"롯데칠성","mktcap":9418,"op26":2129,"op27":2358,"op24":1849,"op25":1672},{"code":"280360","name":"롯데웰푸드","mktcap":9343,"op26":1872,"op27":2135,"op24":1571,"op25":1095},{"code":"456040","name":"OCI","mktcap":8326,"op26":1698,"op27":2071,"op24":1105,"op25":4},{"code":"137310","name":"에스디바이오센서","mktcap":7897,"op26":null,"op27":null,"op24":-541,"op25":-809},{"code":"009240","name":"한샘","mktcap":7884,"op26":360,"op27":440,"op24":312,"op25":185},{"code":"071320","name":"지역난방공사","mktcap":7665,"op26":4004,"op27":3934,"op24":3279,"op25":5296},{"code":"000670","name":"영풍","mktcap":7263,"op26":null,"op27":null,"op24":-1607,"op25":-2597},{"code":"006650","name":"대한유화","mktcap":7196,"op26":2274,"op27":2418,"op24":-599,"op25":527},{"code":"285130","name":"SK케미칼","mktcap":7153,"op26":69,"op27":1051,"op24":-452,"op25":-2},{"code":"298050","name":"HS효성첨단소재","mktcap":7083,"op26":2071,"op27":2551,"op24":2197,"op25":1574},{"code":"069260","name":"TKG휴켐스","mktcap":6565,"op26":869,"op27":869,"op24":808,"op25":656},{"code":"001680","name":"대상","mktcap":6147,"op26":1831,"op27":2044,"op24":1769,"op25":1693},{"code":"002840","name":"미원상사","mktcap":5838,"op26":null,"op27":null,"op24":599,"op25":436},{"code":"014820","name":"동원시스템즈","mktcap":5537,"op26":null,"op27":null,"op24":919,"op25":662},{"code":"268280","name":"미원에스씨","mktcap":5260,"op26":null,"op27":null,"op24":588,"op25":655},{"code":"003030","name":"세아제강지주","mktcap":4759,"op26":1768,"op27":2913,"op24":2116,"op25":2058},{"code":"005420","name":"코스모화학","mktcap":3960,"op26":null,"op27":null,"op24":-20,"op25":-160},{"code":"008730","name":"율촌화학","mktcap":3722,"op26":131,"op27":454,"op24":-184,"op25":85},{"code":"002030","name":"아세아","mktcap":3570,"op26":null,"op27":null,"op24":1724,"op25":1110}]}/*__DATA_END__*/;
 const YEARS = { '24': {f:'op24', label:'2024 실적'}, '25': {f:'op25', label:'2025 실적'}, '26': {f:'op26', label:'2026E'}, '27': {f:'op27', label:'2027E'} };
+const YEAR_ORDER = ['24','25','26','27'];
 let year = localStorage.getItem('k200y2') || '26';
 if (!YEARS[year]) year = '26';
 let sortKey = 'gap', sortDir = -1, query = '';
 
-function build() {
-  const f = YEARS[year].f;
+function buildFor(yk) {
+  const f = YEARS[yk].f;
   const rows = DATA.rows.map(r => ({...r, op: r[f]}));
   const cov = rows.filter(r => r.op !== null && r.op !== undefined);
   const sumOp = cov.reduce((s, r) => s + r.op, 0);
@@ -96,48 +106,40 @@ const COLS = [
   ['op', '영업이익(조)'], ['wOp', '이익비중%'], ['gap', '괴리(pp)'], ['ratio', '이익/시총']
 ];
 
-let chart;
-function render() {
-  const { rows, cov, sumOp, sumMk } = build();
-  const yl = YEARS[year].label;
-  document.querySelectorAll('.controls button').forEach(b => b.classList.toggle('on', b.dataset.y === year));
-  document.getElementById('meta').innerHTML =
-    `시가총액 기준일 <b>${DATA.asofMkt}</b> · 컨센서스 수집일 <b>${DATA.asofCons}</b> · 커버리지 <b>${cov.length}/${rows.length}</b>종목 (비중은 커버리지 유니버스 기준)`;
-  document.getElementById('cards').innerHTML = `
-    <div class="card"><div class="v">${(sumMk/10000).toLocaleString('ko-KR',{maximumFractionDigits:0})}조</div><div class="k">커버리지 시총 합계</div></div>
-    <div class="card"><div class="v">${(sumOp/10000).toLocaleString('ko-KR',{maximumFractionDigits:0})}조</div><div class="k">${yl} 영업이익 합계</div></div>
-    <div class="card"><div class="v">${(sumOp/sumMk*100).toFixed(1)}%</div><div class="k">이익합계/시총합계</div></div>`;
+let chart, chart2;
 
-  for (const r of rows) r.ratio = (r.gap == null || r.wMk === 0) ? null : r.wOp / r.wMk;
-
+function renderDuo() {
   const isMobile = window.innerWidth <= 640;
-  const nBar = isMobile ? 7 : 10;
-  const covSorted = [...cov].sort((a, b) => b.gap - a.gap);
-  const top = covSorted.slice(0, nBar), bot = covSorted.slice(-nBar).reverse();
-  const cd = [...top, ...bot];
-  if (chart) chart.destroy();
-  chart = new Chart(document.getElementById('ch'), {
-    type: 'bar',
-    data: { labels: cd.map(r => r.name), datasets: [{ label: `괴리(pp) = ${yl} 이익비중 − 시총비중`, data: cd.map(r => +r.gap.toFixed(2)), backgroundColor: cd.map(r => r.gap >= 0 ? '#c0392b' : '#1a6fb5') }] },
-    options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: true, labels: { boxWidth: 12, font: { size: isMobile ? 10 : 11 } } }, tooltip: { callbacks: { afterLabel: c => { const r = cd[c.dataIndex]; return `이익비중 ${r.wOp.toFixed(2)}% / 시총비중 ${r.wMk.toFixed(2)}%`; } } } },
-      scales: { x: { ticks: { font: { size: isMobile ? 9 : 10 } } }, y: { ticks: { font: { size: isMobile ? 9.5 : 10.5 } } } } }
+  const codes = [['005930','삼성전자','#c0392b','#e8a49c'], ['000660','SK하이닉스','#e67e22','#f2c99e']];
+  const labels = YEAR_ORDER.map(k => YEARS[k].label);
+  const datasets = [];
+  const tblRows = { '005930': [], '000660': [] };
+  for (const [code, nm, cOp, cMk] of codes) {
+    const wOps = [], wMks = [];
+    for (const yk of YEAR_ORDER) {
+      const { rows } = buildFor(yk);
+      const r = rows.find(x => x.code === code);
+      wOps.push(r && r.wOp != null ? +r.wOp.toFixed(2) : null);
+      wMks.push(r && r.wMk != null ? +r.wMk.toFixed(2) : null);
+      tblRows[code].push([r && r.wOp, r && r.wMk]);
+    }
+    datasets.push({ type:'bar', label: nm + ' 이익비중', data: wOps, backgroundColor: cOp });
+    datasets.push({ type:'line', label: nm + ' 시총비중', data: wMks, borderColor: cMk, backgroundColor: cMk, borderDash: [6,4], pointRadius: 3, tension: 0 });
+  }
+  if (chart2) chart2.destroy();
+  chart2 = new Chart(document.getElementById('ch2'), {
+    data: { labels, datasets },
+    options: { responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { boxWidth: 12, font: { size: isMobile ? 9.5 : 11 } } }, tooltip: { callbacks: { label: c => `${c.dataset.label}: ${c.parsed.y}%` } } },
+      scales: { y: { title: { display: !isMobile, text: '비중(%)' }, ticks: { font: { size: isMobile ? 9 : 10 } } }, x: { ticks: { font: { size: isMobile ? 10 : 11 } } } } }
   });
+  document.getElementById('duoTbl').innerHTML = `<table><thead><tr><th>종목</th><th>구분</th>${labels.map(l=>`<th>${l}</th>`).join('')}</tr></thead><tbody>` +
+    codes.map(([code, nm]) => `
+      <tr><td rowspan="2" class="nm"><b>${nm}</b></td><td style="text-align:right">이익비중%</td>${tblRows[code].map(x=>`<td class="pos">${x[0]==null?'<span class=\"na\">N/A</span>':x[0].toFixed(2)}</td>`).join('')}</tr>
+      <tr><td style="text-align:right">시총비중%</td>${tblRows[code].map(x=>`<td>${x[1]==null?'<span class=\"na\">N/A</span>':x[1].toFixed(2)}</td>`).join('')}</tr>`).join('') + '</tbody></table>';
+}
 
-  const hr = document.getElementById('hrow');
-  hr.innerHTML = COLS.map(([k, t]) => `<th data-k="${k}">${t} ${sortKey === k ? `<span class="arr">${sortDir > 0 ? '▲' : '▼'}</span>` : ''}</th>`).join('');
-  hr.querySelectorAll('th').forEach(th => th.onclick = () => {
-    const k = th.dataset.k;
-    if (sortKey === k) sortDir *= -1; else { sortKey = k; sortDir = k === 'name' ? 1 : -1; }
-    render();
-  });
-  let list = rows.filter(r => !query || r.name.includes(query) || r.code.includes(query));
-  list.sort((a, b) => {
-    let va = a[sortKey], vb = b[sortKey];
-    if (sortKey === 'name') return sortDir * a.name.localeCompare(b.name, 'ko');
-    if (va == null) return 1; if (vb == null) return -1;
-    return sortDir * (va - vb);
-  });
-  document.getElementById('tbody').innerHTML = list.map(r => `<tr>
-    <td class="nm">${r.name}<span class="code">${r.code}</span></td>
-  
+function render() {
+  const { rows, cov, sumOp, sumMk } = buildFor(year);
+  const yl = YEARS[year].label;
+  document.querySelectorAll('.controls button').forEach(b => b.classList.toggle('on', b.dataset.y === yea
