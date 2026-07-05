@@ -113,29 +113,31 @@ const COLS = [
 
 let chart, chart2;
 
+const HIST = [
+  {y:'2020†', seOp:33.42, seMk:24.42, hxOp:4.65, hxMk:4.36},
+  {y:'2021†', seOp:27.63, seMk:21.21, hxOp:6.64, hxMk:4.33},
+  {y:'2022†', seOp:27.21, seMk:18.68, hxOp:4.40, hxMk:3.09},
+  {y:'2023†', seOp:5.30,  seMk:22.04, hxOp:-6.24, hxMk:4.84}
+];
+
 function renderDuo() {
   const isMobile = window.innerWidth <= 640;
-  const codes = [['005930','삼성전자'], ['000660','SK하이닉스']];
-  const labels = YEAR_ORDER.map(k => YEARS[k].label);
-  const per = { '005930': {wOps:[],wMks:[]}, '000660': {wOps:[],wMks:[]} };
-  const totOp = [], totMk = [];
+  const kLabels = YEAR_ORDER.map(k => YEARS[k].label);
+  const labels = [...HIST.map(h => h.y), ...kLabels];
+  const seOp = HIST.map(h=>h.seOp), seMk = HIST.map(h=>h.seMk), hxOp = HIST.map(h=>h.hxOp), hxMk = HIST.map(h=>h.hxMk);
   for (const yk of YEAR_ORDER) {
     const { rows } = buildFor(yk);
-    let so = 0, sm = 0, any = false;
-    for (const [code] of codes) {
-      const r = rows.find(x => x.code === code);
-      per[code].wOps.push(r && r.wOp != null ? +r.wOp.toFixed(2) : null);
-      per[code].wMks.push(r && r.wMk != null ? +r.wMk.toFixed(2) : null);
-      if (r && r.wOp != null) { so += r.wOp; any = true; }
-      if (r && r.wMk != null) sm += r.wMk;
-    }
-    totOp.push(any ? +so.toFixed(2) : null); totMk.push(any ? +sm.toFixed(2) : null);
+    const se = rows.find(x => x.code === '005930'), hx = rows.find(x => x.code === '000660');
+    seOp.push(se && se.wOp != null ? +se.wOp.toFixed(2) : null); seMk.push(se && se.wMk != null ? +se.wMk.toFixed(2) : null);
+    hxOp.push(hx && hx.wOp != null ? +hx.wOp.toFixed(2) : null); hxMk.push(hx && hx.wMk != null ? +hx.wMk.toFixed(2) : null);
   }
+  const totOp = seOp.map((v, i) => (v == null && hxOp[i] == null) ? null : +((v || 0) + (hxOp[i] || 0)).toFixed(2));
+  const totMk = seMk.map((v, i) => (v == null && hxMk[i] == null) ? null : +((v || 0) + (hxMk[i] || 0)).toFixed(2));
   const datasets = [
-    { label:'삼성전자 이익비중', data: per['005930'].wOps, backgroundColor:'#c0392b', stack:'op' },
-    { label:'SK하이닉스 이익비중', data: per['000660'].wOps, backgroundColor:'#e67e22', stack:'op' },
-    { label:'삼성전자 시총비중', data: per['005930'].wMks, backgroundColor:'#7a7a76', stack:'mk' },
-    { label:'SK하이닉스 시총비중', data: per['000660'].wMks, backgroundColor:'#c2c2bc', stack:'mk' }
+    { label:'삼성전자 이익비중', data: seOp, backgroundColor:'#c0392b', stack:'op' },
+    { label:'SK하이닉스 이익비중', data: hxOp, backgroundColor:'#e67e22', stack:'op' },
+    { label:'삼성전자 시총비중', data: seMk, backgroundColor:'#7a7a76', stack:'mk' },
+    { label:'SK하이닉스 시총비중', data: hxMk, backgroundColor:'#c2c2bc', stack:'mk' }
   ];
   if (chart2) chart2.destroy();
   chart2 = new Chart(document.getElementById('ch2'), {
@@ -149,9 +151,9 @@ function renderDuo() {
           footer: items => { const i = items[0].dataIndex; return '합산 이익비중 ' + (totOp[i]==null?'N/A':totOp[i].toFixed(1)+'%') + ' vs 합산 시총비중 ' + (totMk[i]==null?'N/A':totMk[i].toFixed(1)+'%') + (totOp[i]!=null&&totMk[i]!=null ? ' (차이 ' + (totOp[i]-totMk[i]>0?'+':'') + (totOp[i]-totMk[i]).toFixed(1) + 'pp)' : ''); }
         } }
       },
-      scales: { x: { stacked: true, ticks: { font: { size: isMobile ? 10 : 11 } } }, y: { stacked: true, title: { display: !isMobile, text: '비중(%)' }, ticks: { font: { size: isMobile ? 9 : 10 } } } } }
+      scales: { x: { stacked: true, ticks: { font: { size: isMobile ? 9 : 11 } } }, y: { stacked: true, title: { display: !isMobile, text: '비중(%)' }, ticks: { font: { size: isMobile ? 9 : 10 } } } } }
   });
-  let dhtml = '<table><thead><tr><th>구분</th>';
+  let dhtml = '<table style="min-width:760px"><thead><tr><th>구분</th>';
   for (const l of labels) dhtml += '<th>' + l + '</th>';
   dhtml += '</tr></thead><tbody>';
   const fmtRow = (nm, arr, bold, colorCls) => {
@@ -159,11 +161,11 @@ function renderDuo() {
     for (const v of arr) s += '<td' + (bold ? ' style="font-weight:600"' : '') + (colorCls ? ' class="' + colorCls + '"' : '') + '>' + (v == null ? '<span class="na">N/A</span>' : v.toFixed(2)) + '</td>';
     return s + '</tr>';
   };
-  dhtml += fmtRow('삼성전자 이익비중%', per['005930'].wOps, false, 'pos');
-  dhtml += fmtRow('SK하이닉스 이익비중%', per['000660'].wOps, false, 'pos');
+  dhtml += fmtRow('삼성전자 이익비중%', seOp, false, 'pos');
+  dhtml += fmtRow('SK하이닉스 이익비중%', hxOp, false, 'pos');
   dhtml += fmtRow('▶ 합산 이익비중%', totOp, true, 'pos');
-  dhtml += fmtRow('삼성전자 시총비중%', per['005930'].wMks, false, null);
-  dhtml += fmtRow('SK하이닉스 시총비중%', per['000660'].wMks, false, null);
+  dhtml += fmtRow('삼성전자 시총비중%', seMk, false, null);
+  dhtml += fmtRow('SK하이닉스 시총비중%', hxMk, false, null);
   dhtml += fmtRow('▶ 합산 시총비중%', totMk, true, null);
   let s = '<tr><td class="nm" style="font-weight:600">차이 (이익합−시총합, pp)</td>';
   for (let i = 0; i < labels.length; i++) {
@@ -172,7 +174,7 @@ function renderDuo() {
   }
   dhtml += s + '</tr>';
   dhtml += '</tbody></table>';
-  dhtml += '<div class="chartCap" style="margin:6px 8px 8px">※ 가설 검증: 두 스택 막대(빨강계=이익비중 합, 회색계=시총비중 합)의 높이가 같으면 "반도체 시총비중 = 이익비중" 가설이 성립. 차이가 +면 시총이 이익 기여 대비 저평가, −면 고평가. 시총 기준: 2024·2025는 해당 연도 말, 2026E·2027E는 현재.</div>';
+  dhtml += '<div class="chartCap" style="margin:6px 8px 8px">※ 가설 검증: 두 스택 막대(빨강계=이익비중 합, 회색계=시총비중 합)의 높이가 같으면 "반도체 시총비중 = 이익비중" 가설이 성립. 차이가 +면 이익 기여 대비 시총 저평가, −면 고평가.<br>† 2020~2023 분모: 이익 = 코스피 12월결산 상장사 연결 영업이익 합계(거래소 공표, 금융업 제외 / 2020년은 2021년 발표 증가율 +73.6%로 역산), 시총 = 코스피 전체 연말 시가총액. 금융업 제외 분모 특성상 이익비중이 다소 높게 표시될 수 있음. 반도체 연말 시총 = 연말 종가 × 보통주 수.<br>2024·2025 분모: KOSPI 200(당사 수집, 금융 포함) · 해당 연도 말 시총 / 2026E~ 분모: KOSPI 200 컨센서스 커버리지 · 현재 시총.</div>';
   document.getElementById('duoTbl').innerHTML = dhtml;
 }
 
