@@ -111,7 +111,7 @@ td .code { color: var(--ink3); font-size: 10.5px; margin-left: 5px; font-weight:
 <div class="meta" id="selInfo" style="margin-bottom:14px"></div>
 <div class="cards" id="cards"></div>
 <div class="chartBox"><canvas id="ch"></canvas></div>
-<div class="chartCap"><b style="color:var(--accent)">이익의 몫이 주가의 몫보다 많이 큰 종목 순서</b> — 버는 것에 비해 주가가 낮은 종목이 위로 옵니다.</div>
+<div class="chartCap"><b style="color:var(--accent)">이익÷주가 배수가 큰(=가장 저평가된) 종목 순서</b> — 아래 표와 같은 순위입니다.</div>
 <div class="secHead" style="margin-top:26px"><div><div class="t" style="color:var(--accent)">이익 대비 저평가 종목 순위 <span id="rankYear" style="font-size:12px;font-weight:700;color:#fff;background:var(--ink);padding:2px 9px;border-radius:6px;vertical-align:middle;margin-left:4px"></span></div><div class="sub"><b>1배 이상(=버는 것보다 주가가 낮은 저평가 종목)만</b> 이익÷주가 배수 높은 순으로 표시 · 위 연도 버튼에 따라 바뀜</div></div></div>
 <div class="tblWrap"><table id="tbl"><thead><tr id="hrow"></tr></thead><tbody id="tbody"></tbody></table></div>
 <div class="note">
@@ -281,14 +281,14 @@ function render() {
 
   const isMobile = window.innerWidth <= 640;
   const nBar = isMobile ? 15 : 25;
-  const cd = cov.filter(r => r.gap > 0).sort((a, b) => b.gap - a.gap).slice(0, nBar);
+  const cd = cov.filter(r => r.ratio != null && r.ratio >= 1).sort((a, b) => b.ratio - a.ratio).slice(0, nBar);
   if (chart) chart.destroy();
   chart = new Chart(document.getElementById('ch'), {
     type: 'bar',
-    data: { labels: cd.map(r => r.name), datasets: [{ label: yl + ' · 이익의 몫 − 주가의 몫 차이(%p, 클수록 저평가)', data: cd.map(r => +r.gap.toFixed(2)), backgroundColor: '#c0392b' }] },
+    data: { labels: cd.map(r => r.name), datasets: [{ label: yl + ' · 이익÷주가 배수 (1배 이상 = 저평가, 클수록 더 저평가)', data: cd.map(r => +r.ratio.toFixed(2)), backgroundColor: '#c0392b' }] },
     options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: true, labels: { boxWidth: 12, font: { size: isMobile ? 10 : 11 } } }, tooltip: { callbacks: { afterLabel: c => { const r = cd[c.dataIndex]; return '이익의 몫 ' + r.wOp.toFixed(1) + '% / 주가의 몫 ' + r.wMk.toFixed(1) + '% · 이익÷주가 ' + (r.wOp / r.wMk).toFixed(1) + '배'; } } } },
-      scales: { x: { ticks: { font: { size: isMobile ? 9 : 10 } } }, y: { ticks: { font: { size: isMobile ? 9.5 : 10.5 } } } } }
+      plugins: { legend: { display: true, labels: { boxWidth: 12, font: { size: isMobile ? 10 : 11 } } }, tooltip: { callbacks: { label: c => '이익÷주가 ' + c.parsed.x.toFixed(1) + '배', afterLabel: c => { const r = cd[c.dataIndex]; return '이익의 몫 ' + r.wOp.toFixed(1) + '% / 주가의 몫 ' + r.wMk.toFixed(1) + '%'; } } } },
+      scales: { x: { ticks: { font: { size: isMobile ? 9 : 10 }, callback: v => v + '배' } }, y: { ticks: { font: { size: isMobile ? 9.5 : 10.5 } } } } }
   });
 
   const hr = document.getElementById('hrow');
