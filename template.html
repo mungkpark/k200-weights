@@ -61,30 +61,28 @@ td .code { color: #999; font-size: 10.5px; margin-left: 4px; }
   <button data-y="24">2024 실적</button>
   <button data-y="25">2025 실적</button>
   <button data-y="26">2026E</button>
-  <button data-y="27">2027E</button>
   <input id="q" placeholder="종목명/코드 검색">
 </div>
 <div class="cards" id="cards"></div>
 <div class="chartBox"><canvas id="ch"></canvas></div>
-<div class="chartCap" style="font-size:12px"><b style="color:#c0392b">※ 시총 대비 이익(이익/시총)이 시장 평균보다 높은 종목, 비율 순 상위만 표시</b> — 전체는 아래 표 참고</div>
+<div class="chartCap" style="font-size:12px"><b style="color:#c0392b">※ P/OP(시총÷영업이익)가 시장 평균보다 낮은 종목만, 낮은 순으로 표시</b> — 낮을수록 이익 대비 시총이 싼 종목. 전체는 아래 표 참고</div>
 <h2>전체 종목</h2>
 <div class="tblWrap"><table id="tbl"><thead><tr id="hrow"></tr></thead><tbody id="tbody"></tbody></table></div>
 <div class="note">
-· 영업이익: 2024·2025 실적 / 2026E·2027E 증권사 컨센서스(FnGuide). 시총: 실적 연도는 그 해 연말, 추정 연도는 현재 기준.<br>
-· 괴리(pp) = 이익비중 − 시총비중. 비중은 데이터 있는 종목 기준으로 재계산.
+· 영업이익: 2024·2025 실적 / 2026E는 증권사 컨센서스(FnGuide). 시총: 실적 연도는 그 해 연말, 추정 연도는 현재 기준.<br>
+· P/OP = 시총÷영업이익 (PER의 영업이익 버전, 낮을수록 저평가). 괴리(pp) = 이익비중 − 시총비중.
 </div>
 <script>
 const DATA = /*__DATA_START__*/{}/*__DATA_END__*/;
 const YEARS = {
   '24': {f:'op24', mk:'mk24', label:'2024 실적', mkLabel:'24년말'},
   '25': {f:'op25', mk:'mk25', label:'2025 실적', mkLabel:'25년말'},
-  '26': {f:'op26', mk:'mktcap', label:'2026E', mkLabel:'현재'},
-  '27': {f:'op27', mk:'mktcap', label:'2027E', mkLabel:'현재'}
+  '26': {f:'op26', mk:'mktcap', label:'2026E', mkLabel:'현재'}
 };
-const YEAR_ORDER = ['24','25','26','27'];
+const YEAR_ORDER = ['24','25','26'];
 let year = localStorage.getItem('k200y2') || '26';
 if (!YEARS[year]) year = '26';
-let sortKey = 'gap', sortDir = -1, query = '';
+let sortKey = 'ratio', sortDir = 1, query = '';
 
 function buildFor(yk) {
   const f = YEARS[yk].f, mkf = YEARS[yk].mk;
@@ -106,7 +104,7 @@ function cls(v) { return v == null ? '' : v >= 0 ? 'pos' : 'neg'; }
 
 const COLS = [
   ['name', '종목'], ['capv', '시총(조)'], ['wMk', '시총비중%'],
-  ['op', '영업이익(조)'], ['wOp', '이익비중%'], ['gap', '괴리(pp)'], ['ratio', '이익/시총']
+  ['op', '영업이익(조)'], ['wOp', '이익비중%'], ['gap', '괴리(pp)'], ['ratio', 'P/OP(배)']
 ];
 
 let chart, chart2;
@@ -183,28 +181,28 @@ function render() {
   document.getElementById('cards').innerHTML =
     '<div class="card"><div class="v">' + (sumMk/10000).toLocaleString('ko-KR',{maximumFractionDigits:0}) + '조</div><div class="k">커버리지 시총 합계 (' + ml + ')</div></div>' +
     '<div class="card"><div class="v">' + (sumOp/10000).toLocaleString('ko-KR',{maximumFractionDigits:0}) + '조</div><div class="k">' + yl + ' 영업이익 합계</div></div>' +
-    '<div class="card"><div class="v">' + (sumOp/sumMk*100).toFixed(1) + '%</div><div class="k">이익합계/시총합계</div></div>';
+    '<div class="card"><div class="v">' + (sumMk/sumOp).toFixed(1) + '배</div><div class="k">시장 P/OP (시총합÷영업이익합)</div></div>';
 
-  for (const r of rows) r.ratio = (r.gap == null || r.wMk === 0) ? null : r.wOp / r.wMk;
+  for (const r of rows) r.ratio = (r.op != null && r.op > 0 && r.capv != null) ? r.capv / r.op : null;
 
   const isMobile = window.innerWidth <= 640;
   const nBar = isMobile ? 15 : 25;
-  const mktYield = sumOp / sumMk * 100;
-  const cd = cov.filter(r => r.gap > 0 && r.capv > 0).sort((a, b) => (b.op / b.capv) - (a.op / a.capv)).slice(0, nBar);
+  const mktPop = sumMk / sumOp;
+  const cd = cov.filter(r => r.gap > 0 && r.op > 0).sort((a, b) => (a.capv / a.op) - (b.capv / b.op)).slice(0, nBar);
   if (chart) chart.destroy();
   chart = new Chart(document.getElementById('ch'), {
     type: 'bar',
-    data: { labels: cd.map(r => r.name), datasets: [{ label: yl + ' 이익/시총(%) 상위 — 시장 평균 ' + mktYield.toFixed(1) + '%', data: cd.map(r => +(r.op / r.capv * 100).toFixed(1)), backgroundColor: '#c0392b' }] },
+    data: { labels: cd.map(r => r.name), datasets: [{ label: yl + ' P/OP(시총÷영업이익) 낮은 순 — 시장 평균 ' + mktPop.toFixed(1) + '배', data: cd.map(r => +(r.capv / r.op).toFixed(1)), backgroundColor: '#c0392b' }] },
     options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: true, labels: { boxWidth: 12, font: { size: isMobile ? 10 : 11 } } }, tooltip: { callbacks: { afterLabel: c => { const r = cd[c.dataIndex]; return '시장 평균의 ' + (r.op / r.capv * 100 / mktYield).toFixed(1) + '배 · 이익비중 ' + r.wOp.toFixed(2) + '% / 시총비중 ' + r.wMk.toFixed(2) + '%'; } } } },
-      scales: { x: { ticks: { font: { size: isMobile ? 9 : 10 }, callback: v => v + '%' } }, y: { ticks: { font: { size: isMobile ? 9.5 : 10.5 } } } } }
+      plugins: { legend: { display: true, labels: { boxWidth: 12, font: { size: isMobile ? 10 : 11 } } }, tooltip: { callbacks: { label: c => 'P/OP ' + c.parsed.x + '배 (시장 평균 ' + mktPop.toFixed(1) + '배)', afterLabel: c => { const r = cd[c.dataIndex]; return '이익비중 ' + r.wOp.toFixed(2) + '% / 시총비중 ' + r.wMk.toFixed(2) + '%'; } } } },
+      scales: { x: { ticks: { font: { size: isMobile ? 9 : 10 }, callback: v => v + '배' } }, y: { ticks: { font: { size: isMobile ? 9.5 : 10.5 } } } } }
   });
 
   const hr = document.getElementById('hrow');
   hr.innerHTML = COLS.map(c => '<th data-k="' + c[0] + '">' + c[1] + ' ' + (sortKey === c[0] ? '<span class="arr">' + (sortDir > 0 ? '▲' : '▼') + '</span>' : '') + '</th>').join('');
   hr.querySelectorAll('th').forEach(th => th.onclick = () => {
     const k = th.dataset.k;
-    if (sortKey === k) sortDir *= -1; else { sortKey = k; sortDir = k === 'name' ? 1 : -1; }
+    if (sortKey === k) sortDir *= -1; else { sortKey = k; sortDir = (k === 'name' || k === 'ratio') ? 1 : -1; }
     render();
   });
   let list = rows.filter(r => !query || r.name.includes(query) || r.code.includes(query));
@@ -221,7 +219,7 @@ function render() {
     '<td>' + (r.op == null ? '<span class="na">N/A</span>' : fmt(r.op / 10000, 2)) + '</td>' +
     '<td>' + fmt(r.wOp, 2) + '</td>' +
     '<td class="' + cls(r.gap) + '">' + (r.gap == null ? '<span class="na">N/A</span>' : (r.gap > 0 ? '+' : '') + r.gap.toFixed(2)) + '</td>' +
-    '<td>' + (r.ratio == null ? '<span class="na">N/A</span>' : r.ratio.toFixed(2) + '×') + '</td></tr>').join('');
+    '<td>' + (r.ratio == null ? '<span class="na">' + (r.op != null && r.op <= 0 ? '적자' : 'N/A') + '</span>' : r.ratio.toFixed(1) + '배') + '</td></tr>').join('');
 }
 
 document.querySelectorAll('.controls button').forEach(b => b.onclick = () => { year = b.dataset.y; localStorage.setItem('k200y2', year); render(); });
