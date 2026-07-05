@@ -130,16 +130,77 @@ function renderDuo() {
   chart2 = new Chart(document.getElementById('ch2'), {
     data: { labels, datasets },
     options: { responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { labels: { boxWidth: 12, font: { size: isMobile ? 9.5 : 11 } } }, tooltip: { callbacks: { label: c => `${c.dataset.label}: ${c.parsed.y}%` } } },
+      plugins: { legend: { labels: { boxWidth: 12, font: { size: isMobile ? 9.5 : 11 } } }, tooltip: { callbacks: { label: c => c.dataset.label + ': ' + c.parsed.y + '%' } } },
       scales: { y: { title: { display: !isMobile, text: '비중(%)' }, ticks: { font: { size: isMobile ? 9 : 10 } } }, x: { ticks: { font: { size: isMobile ? 10 : 11 } } } } }
   });
-  document.getElementById('duoTbl').innerHTML = `<table><thead><tr><th>종목</th><th>구분</th>${labels.map(l=>`<th>${l}</th>`).join('')}</tr></thead><tbody>` +
-    codes.map(([code, nm]) => `
-      <tr><td rowspan="2" class="nm"><b>${nm}</b></td><td style="text-align:right">이익비중%</td>${tblRows[code].map(x=>`<td class="pos">${x[0]==null?'<span class=\"na\">N/A</span>':x[0].toFixed(2)}</td>`).join('')}</tr>
-      <tr><td style="text-align:right">시총비중%</td>${tblRows[code].map(x=>`<td>${x[1]==null?'<span class=\"na\">N/A</span>':x[1].toFixed(2)}</td>`).join('')}</tr>`).join('') + '</tbody></table>';
+  let dhtml = '<table><thead><tr><th>종목</th><th>구분</th>';
+  for (const l of labels) dhtml += '<th>' + l + '</th>';
+  dhtml += '</tr></thead><tbody>';
+  for (const [code, nm] of codes) {
+    dhtml += '<tr><td rowspan="2" class="nm"><b>' + nm + '</b></td><td style="text-align:right">이익비중%</td>';
+    for (const x of tblRows[code]) dhtml += '<td class="pos">' + (x[0] == null ? '<span class="na">N/A</span>' : x[0].toFixed(2)) + '</td>';
+    dhtml += '</tr><tr><td style="text-align:right">시총비중%</td>';
+    for (const x of tblRows[code]) dhtml += '<td>' + (x[1] == null ? '<span class="na">N/A</span>' : x[1].toFixed(2)) + '</td>';
+    dhtml += '</tr>';
+  }
+  dhtml += '</tbody></table>';
+  document.getElementById('duoTbl').innerHTML = dhtml;
 }
 
 function render() {
   const { rows, cov, sumOp, sumMk } = buildFor(year);
   const yl = YEARS[year].label;
-  document.querySelectorAll('.controls button').forEach(b => b.classList.toggle('on', b.dataset.y === yea
+  document.querySelectorAll('.controls button').forEach(b => b.classList.toggle('on', b.dataset.y === year));
+  document.getElementById('meta').innerHTML =
+    '시가총액 기준일 <b>' + DATA.asofMkt + '</b> · 컨센서스 수집일 <b>' + DATA.asofCons + '</b> · 커버리지 <b>' + cov.length + '/' + rows.length + '</b>종목 (비중은 커버리지 유니버스 기준)';
+  document.getElementById('cards').innerHTML =
+    '<div class="card"><div class="v">' + (sumMk/10000).toLocaleString('ko-KR',{maximumFractionDigits:0}) + '조</div><div class="k">커버리지 시총 합계</div></div>' +
+    '<div class="card"><div class="v">' + (sumOp/10000).toLocaleString('ko-KR',{maximumFractionDigits:0}) + '조</div><div class="k">' + yl + ' 영업이익 합계</div></div>' +
+    '<div class="card"><div class="v">' + (sumOp/sumMk*100).toFixed(1) + '%</div><div class="k">이익합계/시총합계</div></div>';
+
+  for (const r of rows) r.ratio = (r.gap == null || r.wMk === 0) ? null : r.wOp / r.wMk;
+
+  const isMobile = window.innerWidth <= 640;
+  const nBar = isMobile ? 10 : 15;
+  const cd = cov.filter(r => r.gap > 0).sort((a, b) => b.gap - a.gap).slice(0, nBar);
+  if (chart) chart.destroy();
+  chart = new Chart(document.getElementById('ch'), {
+    type: 'bar',
+    data: { labels: cd.map(r => r.name), datasets: [{ label: yl + ' 괴리(pp) 상위 — 이익비중이 시총비중보다 높은 종목', data: cd.map(r => +r.gap.toFixed(2)), backgroundColor: '#c0392b' }] },
+    options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: true, labels: { boxWidth: 12, font: { size: isMobile ? 10 : 11 } } }, tooltip: { callbacks: { afterLabel: c => { const r = cd[c.dataIndex]; return '이익비중 ' + r.wOp.toFixed(2) + '% / 시총비중 ' + r.wMk.toFixed(2) + '%'; } } } },
+      scales: { x: { ticks: { font: { size: isMobile ? 9 : 10 } } }, y: { ticks: { font: { size: isMobile ? 9.5 : 10.5 } } } } }
+  });
+
+  const hr = document.getElementById('hrow');
+  hr.innerHTML = COLS.map(c => '<th data-k="' + c[0] + '">' + c[1] + ' ' + (sortKey === c[0] ? '<span class="arr">' + (sortDir > 0 ? '▲' : '▼') + '</span>' : '') + '</th>').join('');
+  hr.querySelectorAll('th').forEach(th => th.onclick = () => {
+    const k = th.dataset.k;
+    if (sortKey === k) sortDir *= -1; else { sortKey = k; sortDir = k === 'name' ? 1 : -1; }
+    render();
+  });
+  let list = rows.filter(r => !query || r.name.includes(query) || r.code.includes(query));
+  list.sort((a, b) => {
+    const va = a[sortKey], vb = b[sortKey];
+    if (sortKey === 'name') return sortDir * a.name.localeCompare(b.name, 'ko');
+    if (va == null) return 1; if (vb == null) return -1;
+    return sortDir * (va - vb);
+  });
+  document.getElementById('tbody').innerHTML = list.map(r =>
+    '<tr><td class="nm">' + r.name + '<span class="code">' + r.code + '</span></td>' +
+    '<td>' + fmt(r.mktcap / 10000, 1) + '</td>' +
+    '<td>' + fmt(r.wMk, 2) + '</td>' +
+    '<td>' + (r.op == null ? '<span class="na">N/A</span>' : fmt(r.op / 10000, 2)) + '</td>' +
+    '<td>' + fmt(r.wOp, 2) + '</td>' +
+    '<td class="' + cls(r.gap) + '">' + (r.gap == null ? '<span class="na">N/A</span>' : (r.gap > 0 ? '+' : '') + r.gap.toFixed(2)) + '</td>' +
+    '<td>' + (r.ratio == null ? '<span class="na">N/A</span>' : r.ratio.toFixed(2) + '×') + '</td></tr>').join('');
+}
+
+document.querySelectorAll('.controls button').forEach(b => b.onclick = () => { year = b.dataset.y; localStorage.setItem('k200y2', year); render(); });
+document.getElementById('q').oninput = e => { query = e.target.value.trim(); render(); };
+let rsz; window.addEventListener('resize', () => { clearTimeout(rsz); rsz = setTimeout(() => { render(); renderDuo(); }, 300); });
+render();
+renderDuo();
+</script>
+</body>
+</html>
